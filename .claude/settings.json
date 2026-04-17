@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/kai.han/Desktop/**)"
+    ],
+    "additionalDirectories": [
+      "/Users/kai.han/Desktop"
+    ]
+  }
+}
