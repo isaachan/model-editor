@@ -6,10 +6,10 @@
 |----|------------|----------|------|--------|--------|----------------------|
 | ME-001 | As a 建模者, I want 能够缩放和平移画布, so that 我可以在不同尺寸下查看和编辑大图 | High | Business Story | Backlog | 提供画布基础操作能力，包括缩放、平移、重置视图，这是所有绘图操作的基础 | |
 | ME-002 | As a 建模者, I want 能够创建 Type 节点, so that 我可以在图中表示领域概念 | High | Business Story | Backlog | Type 是Martin Fowler符号体系中的核心元素，用矩形方块表示，内部只需要显示名称 | |
-| ME-003 | As a 建模者, I want 能够在两个 Type 之间创建关系并标注基数, so that 我可以表达类型之间的关联约束 | High | Business Story | Backlog | 这是该建模方法的核心特征，连线两端都需要标注基数，支持所有定义好的基数符号 | |
-| ME-004 | As a 建模者, I want 能够创建类型泛化划分, so that 我可以表达父类和子类之间的分类关系 | High | Business Story | Backlog | 父类型连接到一个容器框，容器框内包含多个子类型，容器框底线区分完整划分和不完整划分 | |
+| ME-003 | As a 建模者, I want 能够在两个 Type 之间创建关系并标注基数, so that 我可以表达类型之间的关联约束 | High | Business Story | Backlog | 这是该建模方法的核心特征，连线两端都需要标注基数，支持所有定义好的基数符号。参考：docs/cardinality.png | |
+| ME-004 | As a 建模者, I want 能够创建类型泛化划分, so that 我可以表达父类和子类之间的分类关系 | High | Business Story | Backlog | 父类型连接到一个容器框，容器框内包含多个子类型，容器框底线区分完整划分和不完整划分。参考：docs/TypeGeneralization.png | |
 | ME-005 | As a 建模者, I want 能够添加短语义陈述, so that 我可以为类型或关系附加简短约束标记 | High | Business Story | Backlog | 使用方括号 `[marker]` 标注在类型框顶部或关系线上，支持所有预定义的短语义标记 | |
-| ME-006 | As a 建模者, I want 能够添加长语义陈述便签, so that 我可以详细描述复杂的业务规则 | High | Business Story | Backlog | 使用折角便签符号，支持按标题分类：Constraint、Derivation、Instances、Method、Note、Overload | |
+| ME-006 | As a 建模者, I want 能够添加长语义陈述便签, so that 我可以详细描述复杂的业务规则 | High | Business Story | Backlog | 使用折角便签符号，支持按标题分类：Constraint、Derivation、Instances、Method、Note、Overload。参考：docs/SemanticStatements.png | |
 | ME-007 | As a 建模者, I want 能够删除选中的元素, so that 我可以纠正错误的创建 | High | Business Story | Backlog | 支持选中单个或多个元素后删除 | |
 | ME-008 | As a 建模者, I want 能够清空整个画布, so that 我可以重新开始一张新图 | High | Business Story | Backlog | 提供清空画布功能，需要二次确认防止误操作 | |
 | ME-009 | As a 建模者, I want 能够使用拖放来调整元素位置, so that 我可以重新布局图表 | High | Business Story | Backlog | 支持拖放调整单个元素位置，关系线自动跟随重绘 | |
