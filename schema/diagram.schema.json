@@ -1,0 +1,309 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://model-editor.example.com/schemas/diagram/v1.json",
+  "title": "Model Editor Diagram Schema",
+  "description": "JSON Schema for Analysis Pattern model diagram (Martin Fowler notation), version 1.0",
+  "type": "object",
+  "required": ["version", "elements"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "pattern": "^\\d+\\.\\d+$",
+      "default": "1.0"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional diagram metadata",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Diagram title"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Creation timestamp (milliseconds since epoch)"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Last update timestamp (milliseconds since epoch)"
+        },
+        "author": {
+          "type": "string",
+          "description": "Author name or identifier"
+        }
+      },
+      "additionalProperties": true
+    },
+    "elements": {
+      "type": "array",
+      "description": "Array of all diagram elements",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/definitions/typeElement" },
+          { "$ref": "#/definitions/relationElement" },
+          { "$ref": "#/definitions/generalizationElement" },
+          { "$ref": "#/definitions/noteElement" }
+        ]
+      }
+    },
+    "additionalProperties": false
+  },
+  "definitions": {
+    "layout": {
+      "description": "Layout information (rendering coordinates and size) - separate from semantics",
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "X coordinate of top-left corner"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y coordinate of top-left corner"
+        },
+        "width": {
+          "type": "number",
+          "description": "Width in pixels"
+        },
+        "height": {
+          "type": "number",
+          "description": "Height in pixels"
+        }
+      },
+      "additionalProperties": false
+    },
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "cardinality": {
+      "type": "string",
+      "enum": [
+        "exactly_one",
+        "zero_or_one",
+        "one_or_more",
+        "zero_or_more",
+        "two_or_more",
+        "range",
+        "unknown",
+        "no_mapping"
+      ],
+      "description": "Cardinality constraint type"
+    },
+    "shortSemantic": {
+      "type": "string",
+      "enum": [
+        "abstract",
+        "immutable",
+        "imm",
+        "singleton",
+        "list",
+        "class",
+        "key",
+        "hierarchy",
+        "dag",
+        "multiple_hierarchies",
+        "historic"
+      ],
+      "description": "Short semantic statement marker"
+    },
+    "longSemanticHeading": {
+      "type": "string",
+      "enum": [
+        "Constraint",
+        "Derivation",
+        "Instances",
+        "Method",
+        "Note",
+        "Overload"
+      ],
+      "description": "Long semantic note heading type"
+    },
+    "partitionCompleteness": {
+      "type": "string",
+      "enum": ["complete", "incomplete"],
+      "description": "Whether the generalization partition is complete (double bottom line) or incomplete (single bottom line)"
+    },
+    "relationEnd": {
+      "type": "object",
+      "description": "Relation endpoint connecting to a type",
+      "required": ["typeId", "cardinality"],
+      "properties": {
+        "typeId": {
+          "type": "string",
+          "description": "ID of the connected type"
+        },
+        "cardinality": {
+          "$ref": "#/definitions/cardinality"
+        },
+        "cardinalityRange": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Custom range [min, max] when cardinality is 'range'"
+        }
+      },
+      "additionalProperties": false
+    },
+    "typeElement": {
+      "type": "object",
+      "description": "A Type node (core concept in Martin Fowler notation)",
+      "required": ["id", "type", "name", "semantics", "layout"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique element identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["type"],
+          "description": "Element type discriminator"
+        },
+        "name": {
+          "type": "string",
+          "description": "Type name displayed in the rectangle"
+        },
+        "semantics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/shortSemantic"
+          },
+          "description": "Short semantic statement markers attached to this type",
+          "default": []
+        },
+        "layout": {
+          "$ref": "#/definitions/layout"
+        }
+      }
+    },
+    "relationElement": {
+      "type": "object",
+      "description": "A relationship between two types with cardinality constraints on both ends",
+      "required": ["id", "type", "source", "target", "isDerived", "semantics"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique element identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["relation"],
+          "description": "Element type discriminator"
+        },
+        "source": {
+          "$ref": "#/definitions/relationEnd",
+          "description": "Source end of the relation"
+        },
+        "target": {
+          "$ref": "#/definitions/relationEnd",
+          "description": "Target end of the relation"
+        },
+        "isDerived": {
+          "type": "boolean",
+          "description": "Whether this relation is derived (marked with / on the line)",
+          "default": false
+        },
+        "semantics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/shortSemantic"
+          },
+          "description": "Short semantic statement markers attached to this relation",
+          "default": []
+        },
+        "controlPoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/point"
+          },
+          "description": "Optional control points for manual path adjustment (Bezier curve)"
+        }
+      }
+    },
+    "generalizationElement": {
+      "type": "object",
+      "description": "A generalization partition - container for child types connected to a parent type",
+      "required": ["id", "type", "parentTypeId", "childTypeIds", "completeness", "layout"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique element identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["generalization"],
+          "description": "Element type discriminator"
+        },
+        "parentTypeId": {
+          "type": "string",
+          "description": "ID of the parent type"
+        },
+        "childTypeIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "IDs of child types inside this partition"
+        },
+        "completeness": {
+          "$ref": "#/definitions/partitionCompleteness",
+          "description": "Whether this is a complete (all instances accounted for) or incomplete partition"
+        },
+        "semantics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/shortSemantic"
+          },
+          "description": "Short semantic statement markers attached to this generalization",
+          "default": []
+        },
+        "layout": {
+          "$ref": "#/definitions/layout"
+        }
+      }
+    },
+    "noteElement": {
+      "type": "object",
+      "description": "A long semantic statement in a folded note box",
+      "required": ["id", "type", "heading", "content", "layout"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique element identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["note"],
+          "description": "Element type discriminator"
+        },
+        "heading": {
+          "$ref": "#/definitions/longSemanticHeading",
+          "description": "Note category heading"
+        },
+        "content": {
+          "type": "string",
+          "description": "The content text of the note"
+        },
+        "attachedTo": {
+          "type": "string",
+          "description": "Optional ID of the element this note is attached to"
+        },
+        "layout": {
+          "$ref": "#/definitions/layout"
+        }
+      }
+    }
+  }
+}

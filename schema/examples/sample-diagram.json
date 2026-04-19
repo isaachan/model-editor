@@ -1,0 +1,116 @@
+
+{
+  "version": "1.0",
+  "metadata": {
+    "title": "Party and Membership Example",
+    "createdAt": 1713500000000,
+    "updatedAt": 1713600000000,
+    "author": "Bill"
+  },
+  "elements": [
+    {
+      "id": "type-1",
+      "type": "type",
+      "name": "Party",
+      "semantics": ["abstract"],
+      "layout": {
+        "x": 100,
+        "y": 100,
+        "width": 120,
+        "height": 60
+      }
+    },
+    {
+      "id": "type-2",
+      "type": "type",
+      "name": "Person",
+      "semantics": [],
+      "layout": {
+        "x": 200,
+        "y": 200,
+        "width": 100,
+        "height": 50
+      }
+    },
+    {
+      "id": "type-3",
+      "type": "type",
+      "name": "Organization",
+      "semantics": [],
+      "layout": {
+        "x": 400,
+        "y": 200,
+        "width": 120,
+        "height": 50
+      }
+    },
+    {
+      "id": "type-4",
+      "type": "type",
+      "name": "Membership",
+      "semantics": [],
+      "layout": {
+        "x": 300,
+        "y": 350,
+        "width": 120,
+        "height": 60
+      }
+    },
+    {
+      "id": "gen-1",
+      "type": "generalization",
+      "parentTypeId": "type-1",
+      "childTypeIds": ["type-2", "type-3"],
+      "completeness": "complete",
+      "layout": {
+        "x": 150,
+        "y": 180,
+        "width": 420,
+        "height": 100
+      }
+    },
+    {
+      "id": "rel-1",
+      "type": "relation",
+      "source": {
+        "typeId": "type-2",
+        "cardinality": "one_or_more"
+      },
+      "target": {
+        "typeId": "type-4",
+        "cardinality": "zero_or_more"
+      },
+      "isDerived": false,
+      "semantics": [],
+      "controlPoints": []
+    },
+    {
+      "id": "rel-2",
+      "type": "relation",
+      "source": {
+        "typeId": "type-3",
+        "cardinality": "one_or_more"
+      },
+      "target": {
+        "typeId": "type-4",
+        "cardinality": "zero_or_more"
+      },
+      "isDerived": false,
+      "semantics": [],
+      "controlPoints": []
+    },
+    {
+      "id": "note-1",
+      "type": "note",
+      "heading": "Constraint",
+      "content": "A Person must be a member of at least one Organization.",
+      "attachedTo": "rel-1",
+      "layout": {
+        "x": 50,
+        "y": 450,
+        "width": 280,
+        "height": 80
+      }
+    }
+  ]
+}
