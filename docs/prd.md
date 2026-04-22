@@ -17,33 +17,25 @@
   - **type表示**：矩形方块，表示建模中的类型（注意：Martin Fowler的notation中只有type，没有class和interface的概念）。type内部只需要名称，不需要属性和操作等细节。
   - **基数表示法（Cardinality）**：基于Crow's Foot Notation（乌鸦脚表示法）的变体，用于描述type之间的关系基数。type之间的连线均为实线，**连线两端都需要标注基数**，分别表示对端实体对本端的基数约束：
   ![基数表示](./diagram-samples/cardinality.png)
-    * **Exactly one $[1, 1]$（必须且仅有一个）**：线条末端画两条垂直短并行线（||）
-    * **Zero or one $[0, 1]$（零个或一个）**：线条末端画圆圈紧接着垂直短线（○|）
-    * **One or more $[1, *]$（一个或多个）**：线条末端先画垂直短线，再分叉成三条线（乌鸦脚）
-    * **Zero or more $[0, *]$（零个或多个）**：线条末端先画圆圈，再分叉成三条线（乌鸦脚）
-    * **Two or more $[2, *]$（两个或更多）**：类似"一个或多个"，但在乌鸦脚上方标注数字"2"
-    * **Specifically enumerated $[n, m]$（指定范围）**：线条上方直接写区间符号$[n, m]$
-    * **Unknown（未知）**：线条末端画问号"?"
-    * **No mapping in this direction（此方向无映射）**：线条末端画叉号"X"
-    * **Derived mapping（派生映射）**：线条上画倾斜撇号"/"表示推导关系
+    * **Exactly one $[1, 1]$（必须且仅有一个）**
+    * **Zero or one $[0, 1]$（零个或一个）**
+    * **One or more $[1, *]$（一个或多个）**
+    * **Zero or more $[0, *]$（零个或多个）**
+    * **Two or more $[2, *]$（两个或更多）**
+    * **Specifically enumerated $[n, m]$（指定范围）**
+    * **Unknown（未知）**
+    * **No mapping in this direction（此方向无映射）**
+    * **Derived mapping（派生映射）**
   - **Type Generalization（类型泛化）**：通过嵌套方框容器表示父类（Supertype）与子类（Subtype）之间的逻辑关系：
   ![类型泛化](./diagram-samples/TypeGeneralization.png)
-    * **核心布局**：
-      - 父类（Supertype）：顶部或中心的独立矩形框
-      - 容器框：通过一条直线连接到父类，容器框内部包含多个子类（Subtype）小框
     * **划分类型**：
-      - **完整划分（Complete Partition）**：容器框底部有两条平行水平线（厚底座），表示"穷尽且互斥"，父类的所有实例必须属于其中某一个子类
-      - **不完整划分（Incomplete Partition）**：容器框底部只有单条水平线，表示"非穷尽"，允许存在未定义的子类型
+      - **完整划分（Complete Partition）**
+      - **不完整划分（Incomplete Partition）**
     * **特殊规则**：
-      - **多重划分（Multiple Partitions）**：父类可同时连接多个容器框（完整划分和不完整划分可共存）
+      - **多重划分（Multiple Partitions）**：完整划分和不完整划分可共存
       - **正交性（Orthogonality）**：实例可同时属于不同划分的子类，但不能同时属于同一划分内的不同子类
       - **多层泛化（Multi-level）**：子类可进一步细分，形成递归的树状或网状结构
-    * **语义总结**：
-      - 双底线方框 = 完整划分（所有实例必须入座）
-      - 单底线方框 = 不完整划分（允许存在定义之外的实例）
-      - 同一框内的子类 = 互斥（不可兼得）
-      - 不同框的子类 = 可叠加（一个实例可拥有多种分类标签）
-  - **语义陈述（Semantic Statements）**：在复杂的领域建模中，图形符号负责骨架，而语义陈述负责赋予灵魂和规则：
+    - **语义陈述（Semantic Statements）**：在复杂的领域建模中，图形符号负责骨架，而语义陈述负责赋予灵魂和规则：
   ![语义陈述](./diagram-samples/SemanticStatements.png)
     * **短语义陈述（Short Semantic Statements）**：使用方括号 [marker] 标注在类型框顶部或关系线上：
       - **核心约束类**：
@@ -61,7 +53,6 @@
         * [multiple hierarchies]：附于递归关联，表示存在多个并行的层次结构
         * [historic]：附于历史映射，表示需要维护连接的历史痕迹
     * **长语义陈述（Long Semantic Statements）**：当规则无法用一个单词概括时，使用"折角便签"符号，根据以下标题开头：
-
       | 标题 (Heading) | 作用对象 (Attached To) | 语义含义 |
       |--------|----------|--------|
       | Constraint | 类型 (Type) | 必须对该类型所有实例都为真的断言（业务规则） |
