@@ -16,7 +16,7 @@
 - **符号支持**：全面支持Martin Fowler《分析模式》附录A "Type Diagrams"中的符号体系：
   - **type表示**：矩形方块，表示建模中的类型（注意：Martin Fowler的notation中只有type，没有class和interface的概念）。type内部只需要名称，不需要属性和操作等细节。
   - **基数表示法（Cardinality）**：基于Crow's Foot Notation（乌鸦脚表示法）的变体，用于描述type之间的关系基数。type之间的连线均为实线，**连线两端都需要标注基数**，分别表示对端实体对本端的基数约束：
-  ![基数表示](./cardinality.png)
+  ![基数表示](./diagram-samples/cardinality.png)
     * **Exactly one $[1, 1]$（必须且仅有一个）**：线条末端画两条垂直短并行线（||）
     * **Zero or one $[0, 1]$（零个或一个）**：线条末端画圆圈紧接着垂直短线（○|）
     * **One or more $[1, *]$（一个或多个）**：线条末端先画垂直短线，再分叉成三条线（乌鸦脚）
@@ -27,7 +27,7 @@
     * **No mapping in this direction（此方向无映射）**：线条末端画叉号"X"
     * **Derived mapping（派生映射）**：线条上画倾斜撇号"/"表示推导关系
   - **Type Generalization（类型泛化）**：通过嵌套方框容器表示父类（Supertype）与子类（Subtype）之间的逻辑关系：
-  ![类型泛化](./TypeGeneralization.png)
+  ![类型泛化](./diagram-samples/TypeGeneralization.png)
     * **核心布局**：
       - 父类（Supertype）：顶部或中心的独立矩形框
       - 容器框：通过一条直线连接到父类，容器框内部包含多个子类（Subtype）小框
@@ -44,7 +44,7 @@
       - 同一框内的子类 = 互斥（不可兼得）
       - 不同框的子类 = 可叠加（一个实例可拥有多种分类标签）
   - **语义陈述（Semantic Statements）**：在复杂的领域建模中，图形符号负责骨架，而语义陈述负责赋予灵魂和规则：
-  ![语义陈述](./SemanticStatements.png)
+  ![语义陈述](./diagram-samples/SemanticStatements.png)
     * **短语义陈述（Short Semantic Statements）**：使用方括号 [marker] 标注在类型框顶部或关系线上：
       - **核心约束类**：
         * [abstract]：附于类型 - 该类型不能有直接实例，必须通过子类实例化；附于映射 - 表示该关系是抽象的，必须由子域的具体实现来覆盖

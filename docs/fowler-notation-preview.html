@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Martin Fowler Notation Preview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f5f5f7; padding: 40px; }
+        h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        .subtitle { font-size: 14px; color: #86868b; margin-bottom: 30px; }
+        .canvas { position: relative; width: 1000px; height: 650px; background: white; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.06); overflow: hidden; background: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0); background-size: 20px 20px; }
+        
+        /* TYPE BOX - STRICT NO ROUNDED CORNERS! */
+        .type-box { position: absolute; background: white; border: 1.5px solid #1d1d1f; border-radius: 0; min-width: 120px; min-height: 60px; display: flex; align-items: center; justify-content: center; padding: 12px 24px; font-size: 14px; font-weight: 500; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .type-box.selected { box-shadow: 0 0 0 3px rgba(0,122,255,0.3), 0 4px 16px rgba(0,0,0,0.1); }
+        .type-box .semantic-marker { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 2px 8px; font-size: 10px; color: #af52de; border: 1px solid #af52de; border-radius: 4px; }
+        
+        /* PARTITION BOX */
+        .partition-box { position: absolute; background: rgba(255,255,255,0.5); border: 1.5px solid #1d1d1f; border-radius: 0; }
+        .partition-box.complete { border-bottom-width: 4px; border-bottom-style: double; }
+        .partition-box.incomplete { border-bottom-width: 2px; }
+        
+        /* SEMANTIC NOTE */
+        .semantic-note { position: absolute; background: #fffacd; border: 1px solid #e6d7a0; padding: 12px; min-width: 160px; font-size: 12px; line-height: 1.5; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); transform: rotate(-1deg); }
+        .semantic-note .note-heading { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #86868b; margin-bottom: 6px; }
+        
+        .section-label { position: absolute; font-size: 11px; font-weight: 600; color: #007aff; text-transform: uppercase; letter-spacing: 0.5px; }
+        .caption { position: absolute; font-size: 10px; color: #86868b; }
+        .legend { position: absolute; bottom: 20px; right: 20px; background: rgba(255,255,255,0.95); padding: 16px; border-radius: 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .legend h3 { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+        .legend-item { margin: 6px 0; display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Martin Fowler - Analysis Patterns Notation</h1>
+    <p class="subtitle">Complete preview of all modeling symbols</p>
+
+    <div class="canvas">
+        <svg width="100%" height="100%" style="position:absolute;">
+            <!-- Supertype -> Partition -->
+            <line x1="450" y1="65" x2="450" y2="100" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- Person -> Order -->
+            <line x1="220" y1="230" x2="220" y2="340" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- EXACTLY ONE marker -->
+            <line x1="215" y1="230" x2="215" y2="250" stroke="#1d1d1f" stroke-width="1.5"/>
+            <line x1="225" y1="230" x2="225" y2="250" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- ZERO OR MORE marker -->
+            <circle cx="220" cy="340" r="4" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+            <line x1="220" y1="310" x2="195" y2="340" stroke="#1d1d1f" stroke-width="1.5"/>
+            <line x1="220" y1="310" x2="245" y2="340" stroke="#1d1d1f" stroke-width="1.5"/>
+            <line x1="220" y1="300" x2="220" y2="340" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- DERIVED marker -->
+            <line x1="230" y1="280" x2="245" y2="260" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- Order -> Order Line -->
+            <line x1="350" y1="420" x2="520" y2="420" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- ONE OR MORE marker (Crow's foot) -->
+            <line x1="520" y1="390" x2="490" y2="420" stroke="#1d1d1f" stroke-width="1.5"/>
+            <line x1="520" y1="450" x2="490" y2="420" stroke="#1d1d1f" stroke-width="1.5"/>
+            <line x1="510" y1="420" x2="520" y2="420" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- Product -> Order Line -->
+            <line x1="650" y1="310" x2="570" y2="400" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- ZERO OR ONE marker -->
+            <circle cx="650" cy="310" r="4" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+            <line x1="640" y1="290" x2="640" y2="330" stroke="#1d1d1f" stroke-width="1.5"/>
+            <!-- Labels -->
+            <text x="240" y="240" font-size="10" fill="#86868b">[1,1]</text>
+            <text x="170" y="300" font-size="10" fill="#86868b">[0,*]</text>
+            <text x="255" y="275" font-size="10" fill="#86868b">/ derived</text>
+            <text x="460" y="400" font-size="10" fill="#86868b">[1,*]</text>
+        </svg>
+
+        <!-- Section 1: Type Generalization -->
+        <div class="section-label" style="left:40px; top:20px;">1. Type Generalization</div>
+        
+        <!-- Supertype: Party -->
+        <div class="type-box selected" style="left:380px; top:25px;">
+            <div class="semantic-marker">[abstract]</div>
+            Party
+        </div>
+
+        <!-- COMPLETE Partition (Double bottom line) -->
+        <div class="partition-box complete" style="left:250px; top:100px; width:400px; height:120px;">
+            <div class="type-box" style="left:40px; top:30px; min-width:100px; min-height:50px; position:absolute;">Person</div>
+            <div class="type-box" style="left:240px; top:30px; min-width:100px; min-height:50px; position:absolute;">Organization</div>
+        </div>
+        <div class="caption" style="left:280px; top:225px;">Complete Partition (exhaustive, mutually exclusive)</div>
+
+        <!-- Section 2: Cardinality -->
+        <div class="section-label" style="left:40px; top:260px;">2. Cardinality Relations</div>
+
+        <!-- INCOMPLETE Partition (Single bottom line) -->
+        <div class="partition-box incomplete" style="left:50px; top:280px; width:150px; height:160px;">
+            <div class="type-box" style="left:25px; top:30px; min-width:70px; min-height:35px; font-size:12px; position:absolute;">Individual</div>
+            <div class="type-box" style="left:25px; top:95px; min-width:70px; min-height:35px; font-size:12px; position:absolute;">Corporate</div>
+        </div>
+        <div class="caption" style="left:55px; top:445px;">Incomplete Partition</div>
+
+        <!-- More Type Boxes -->
+        <div class="type-box" style="left:160px; top:360px;">
+            <div class="semantic-marker">[hierarchy]</div>
+            Order
+        </div>
+        <div class="type-box" style="left:520px; top:390px;">Order Line</div>
+        <div class="type-box" style="left:650px; top:280px;">Product</div>
+
+        <!-- Section 3: Semantic Statement -->
+        <div class="section-label" style="left:780px; top:20px;">3. Semantic Statement</div>
+        <div class="semantic-note" style="left:750px; top:50px;">
+            <div class="note-heading">Constraint</div>
+            An Organization cannot place Orders unless it has a registered Contact Person
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <h3>Cardinality Types</h3>
+            <div class="legend-item"><span>║</span><span>Exactly One [1,1]</span></div>
+            <div class="legend-item"><span>○|</span><span>Zero or One [0,1]</span></div>
+            <div class="legend-item"><span><</span><span>One or More [1,*]</span></div>
+            <div class="legend-item"><span>○<</span><span>Zero or More [0,*]</span></div>
+            <div class="legend-item"><span>/</span><span>Derived Mapping</span></div>
+        </div>
+    </div>
+</body>
+</html>

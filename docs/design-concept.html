@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Editor - Apple Design Concept</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            overflow: hidden;
+        }
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
+
+        /* Toolbar */
+        .toolbar {
+            height: 52px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+        }
+        .toolbar-section { display: flex; gap: 4px; padding: 0 8px; border-left: 1px solid rgba(0,0,0,0.08); }
+        .toolbar-section:first-child { border-left: none; }
+        .toolbar-btn {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toolbar-btn:hover { background: rgba(0,0,0,0.05); }
+        .toolbar-btn.active { background: #007aff; color: white; }
+        .document-title { flex: 1; text-align: center; font-size: 13px; font-weight: 500; opacity: 0.8; }
+        .avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #007aff, #af52de);
+            border: 2px solid white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            margin-left: -8px;
+        }
+
+        /* Main Content */
+        .main-content { flex: 1; display: flex; }
+
+        /* Left Sidebar */
+        .shape-library {
+            width: 64px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(0,0,0,0.08);
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .shape-btn {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .shape-btn:hover { background: rgba(0,0,0,0.04); }
+        .shape-btn.active { background: rgba(0,122,255,0.12); box-shadow: inset 0 0 0 1.5px #007aff; }
+
+        /* Canvas Area */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
+            background-size: 20px 20px;
+            background-position: 10px 10px;
+        }
+
+        /* ================================================ */
+        /* ============ MARTIN FOWLER NOTATION ============ */
+        /* ================================================ */
+        
+        /* 1. TYPE BOX (STRICT - NO ROUNDED CORNERS!) */
+        .type-box {
+            position: absolute;
+            background: white;
+            border: 1.5px solid #1d1d1f;
+            border-radius: 0;  /* IMPORTANT: Fowler notation uses sharp corners! */
+            min-width: 120px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .type-box.selected { box-shadow: 0 0 0 3px rgba(0,122,255,0.3), 0 4px 16px rgba(0,0,0,0.1); }
+        
+        /* Semantic Marker on Type Box */
+        .type-box .semantic-marker {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 2px 8px;
+            font-size: 10px;
+            color: #af52de;
+            font-weight: 500;
+            border: 1px solid #af52de;
+            border-radius: 4px;
+        }
+
+        /* 2. PARTITION BOX (Generalization) */
+        .partition-box {
+            position: absolute;
+            background: rgba(255,255,255,0.5);
+            border: 1.5px solid #1d1d1f;
+            border-radius: 0;
+        }
+        /* Complete Partition - Double bottom line (exhaustive) */
+        .partition-box.complete { border-bottom-width: 4px; border-bottom-style: double; }
+        /* Incomplete Partition - Single bottom line (non-exhaustive) */
+        .partition-box.incomplete { border-bottom-width: 2px; }
+
+        /* 3. CARDINALITY (Crow's Foot Notation Variant) */
+        .connection-line { stroke: #1d1d1f; stroke-width: 1.5; fill: none; }
+        .cardinality-label { font-size: 10px; fill: #86868b; }
+
+        /* 4. SEMANTIC NOTE (Sticky Style) */
+        .semantic-note {
+            position: absolute;
+            background: #fffacd;  /* Classic yellow sticky */
+            border: 1px solid #e6d7a0;
+            padding: 12px;
+            min-width: 160px;
+            font-size: 12px;
+            line-height: 1.5;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+            transform: rotate(-1deg);  /* Natural tilt */
+        }
+        .semantic-note .note-heading {
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #86868b;
+            margin-bottom: 6px;
+        }
+
+        /* 5. DERIVED MAPPING (Slash marker) */
+        .derived-marker { stroke: #1d1d1f; stroke-width: 1.5; }
+
+        /* Right Inspector Panel */
+        .inspector-panel {
+            width: 260px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(0,0,0,0.08);
+            padding: 16px;
+        }
+        .inspector-title { font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+        .inspector-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #86868b;
+            margin: 16px 0 8px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 8px 12px;
+            background: #fafafa;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .semantic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .semantic-tag {
+            padding: 6px 10px;
+            background: rgba(175,82,222,0.1);
+            border: 1px solid rgba(175,82,222,0.3);
+            border-radius: 6px;
+            font-size: 11px;
+            color: #af52de;
+            text-align: center;
+            cursor: pointer;
+        }
+        .semantic-tag.active { background: #af52de; color: white; }
+        .cardinality-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+        .card-option {
+            padding: 10px 8px;
+            background: #fafafa;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 10px;
+            font-size: 11px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .card-option.active { background: rgba(0,122,255,0.12); border-color: #007aff; font-weight: 500; }
+
+        /* Status Bar */
+        .status-bar {
+            height: 28px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 11px;
+            color: #86868b;
+            gap: 16px;
+        }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #34c759; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 44px;
+            right: 24px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .zoom-btn { width: 40px; height: 40px; border: none; background: transparent; cursor: pointer; font-size: 18px; }
+        .zoom-btn:hover { background: rgba(0,0,0,0.05); }
+        .zoom-btn + .zoom-btn { border-top: 1px solid rgba(0,0,0,0.08); }
+        .zoom-level { padding: 6px 0; text-align: center; font-size: 11px; font-weight: 500; border-top: 1px solid rgba(0,0,0,0.08); color: #86868b; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <button class="toolbar-btn">📄</button>
+                <button class="toolbar-btn">💾</button>
+            </div>
+            <div class="toolbar-section">
+                <button class="toolbar-btn">↩</button>
+                <button class="toolbar-btn">↪</button>
+            </div>
+            <div class="toolbar-section">
+                <button class="toolbar-btn active">⬚</button>
+                <button class="toolbar-btn">▭</button>
+                <button class="toolbar-btn">⟷</button>
+                <button class="toolbar-btn">📝</button>
+            </div>
+            <div class="document-title">Order Management Model</div>
+            <div class="toolbar-section">
+                <button class="toolbar-btn">📤</button>
+                <button class="toolbar-btn">🔗</button>
+            </div>
+            <div style="display:flex;margin-left:8px;">
+                <div class="avatar">KH</div>
+                <div class="avatar" style="background: linear-gradient(135deg, #34c759, #30d158);">ZM</div>
+                <div class="avatar" style="background: linear-gradient(135deg, #ff9500, #ff3b30);">YL</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Left Shape Library -->
+            <div class="shape-library">
+                <button class="shape-btn active">▭</button>
+                <button class="shape-btn">⟷</button>
+                <button class="shape-btn">⏹</button>
+                <button class="shape-btn">📝</button>
+                <div style="flex:1;"></div>
+                <button class="shape-btn">⊞</button>
+            </div>
+
+            <!-- Canvas Area with ALL FOWLER NOTATION ELEMENTS -->
+            <div class="canvas-container">
+                <!-- SVG Layer for Connections -->
+                <svg class="canvas-svg" style="position:absolute;width:100%;height:100%;">
+                    
+                    <!-- 1. Supertype -> Partition Connection -->
+                    <line class="connection-line" x1="50%" y1="11%" x2="50%" y2="18%"/>
+                    
+                    <!-- 2. Person -> Order: Exactly One [1,1] at Person end -->
+                    <line class="connection-line" x1="31%" y1="38%" x2="31%" y2="58%"/>
+                    
+                    <!-- Cardinality: EXACTLY ONE (two vertical parallel lines) -->
+                    <line x1="30.5%" y1="38%" x2="30.5%" y2="41%" stroke="#1d1d1f" stroke-width="1.5"/>
+                    <line x1="31.5%" y1="38%" x2="31.5%" y2="41%" stroke="#1d1d1f" stroke-width="1.5"/>
+                    <text x="33%" y="39%" class="cardinality-label">[1,1]</text>
+                    
+                    <!-- Cardinality: ZERO OR MORE (circle + crow's foot) -->
+                    <circle cx="31%" cy="58%" r="4" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+                    <line x1="31%" y1="54%" x2="28%" y2="58%" stroke="#1d1d1f" stroke-width="1.5"/>
+                    <line x1="31%" y1="54%" x2="34%" y2="58%" stroke="#1d1d1f" stroke-width="1.5"/>
+                    <line x1="31%" y1="53%" x2="31%" y2="58%" stroke="#1d1d1f" stroke-width="1.5"/>
+                    <text x="27%" y="53%" class="cardinality-label">[0,*]</text>
+                    
+                    <!-- DERIVED M
