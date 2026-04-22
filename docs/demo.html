@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Editor - Fowler Notation Prototype</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --apple-gray: #f5f5f7;
+            --apple-dark: #1d1d1f;
+            --apple-secondary: #86868b;
+            --apple-blue: #0071e3;
+            --apple-separator: rgba(0,0,0,0.1);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--apple-gray);
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+        }
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        /* Toolbar */
+        .toolbar {
+            height: 52px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--apple-separator);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 100;
+        }
+        .toolbar-section { display: flex; align-items: center; gap: 8px; }
+        .toolbar-btn {
+            width: 36px; height: 36px;
+            border: none; background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+        .toolbar-btn:hover { background: rgba(0,0,0,0.05); }
+        .toolbar-btn.primary {
+            background: var(--apple-blue); color: white;
+            width: auto; padding: 0 16px; font-size: 13px; font-weight: 500;
+        }
+        .document-title {
+            font-size: 14px; font-weight: 500;
+            padding: 6px 12px; border: none; background: transparent;
+            text-align: center; border-radius: var(--radius-sm);
+        }
+        .document-title:hover { background: rgba(0,0,0,0.05); }
+        .divider { width: 1px; height: 24px; background: var(--apple-separator); margin: 0 4px; }
+        /* Main */
+        .main { display: flex; flex: 1; overflow: hidden; }
+        /* Left Sidebar */
+        .sidebar-left {
+            width: 64px;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--apple-separator);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 12px 0; gap: 8px;
+        }
+        .tool-btn {
+            width: 48px; height: 48px;
+            border: none; background: transparent;
+            border-radius: var(--radius-md);
+            cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 3px;
+            color: var(--apple-secondary); transition: all 0.2s;
+        }
+        .tool-btn:hover { background: rgba(0,0,0,0.05); color: var(--apple-dark); }
+        .tool-btn.active { background: var(--apple-blue); color: white; }
+        .tool-icon { font-size: 18px; }
+        .tool-label { font-size: 10px; font-weight: 500; }
+        .sidebar-divider { width: 32px; height: 1px; background: var(--apple-separator); margin: 8px 0; }
+        /* Canvas */
+        .canvas-container {
+            flex: 1; position: relative; overflow: auto;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .canvas {
+            position: relative;
+            width: 1600px; height: 1200px;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+            background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        /* Type Box */
+        .type-box {
+            position: absolute; background: white;
+            border: 1.5px solid var(--apple-dark); border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0 16px; min-width: 100px; min-height: 50px;
+            cursor: move; user-select: none; transition: box-shadow 0.2s;
+        }
+        .type-box:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .type-box.selected { box-shadow: 0 0 0 3px rgba(0,113,227,0.3); border-color: var(--apple-blue); }
+        .type-name { font-size: 14px; font-weight: 500; }
+        /* Semantic Marker */
+        .semantic-marker {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            background: white; padding: 2px 6px; font-size: 11px; font-weight: 500;
+            color: var(--apple-blue); border: 1px solid var(--apple-blue); border-radius: 4px;
+        }
+        /* Right Sidebar */
+        .sidebar-right {
+            width: 260px; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px);
+            border-left: 1px solid var(--apple-separator);
+        }
+        .sidebar-header { padding: 16px; border-bottom: 1px solid var(--apple-separator); }
+        .sidebar-title { font-size: 13px; font-weight: 600; }
+        .sidebar-content { padding: 16px; }
+        .property-group { margin-bottom: 20px; }
+        .property-label {
+            font-size: 11px; font-weight: 600; color: var(--apple-secondary);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+        }
+        .property-input {
+            width: 100%; padding: 8px 12px; font-size: 13px;
+            border: 1px solid rgba(0,0,0,0.1); border-radius: var(--radius-sm);
+        }
+        .semantic-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .semantic-tag {
+            padding: 4px 10px; font-size: 11px; background: rgba(0,113,227,0.1);
+            color: var(--apple-blue); border-radius: 20px; cursor: pointer;
+        }
+        .semantic-tag.active { background: var(--apple-blue); color: white; }
+        /* Status Bar */
+        .status-bar {
+            height: 28px; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px);
+            border-top: 1px solid var(--apple-separator); display: flex;
+            align-items: center; justify-content: space-between; padding: 0 16px;
+            font-size: 11px; color: var(--apple-secondary);
+        }
+        /* SVG Layer */
+        .connections { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        /* Note Box */
+        .note-box {
+            position: absolute; background: #fffbe6; border: 1px solid #e8d9a0;
+            border-radius: 4px; padding: 12px; min-width: 150px;
+        }
+        .note-box::before {
+            content: ''; position: absolute; top: 0; right: 0;
+            border-left: 16px solid transparent; border-top: 16px solid #e8d9a0;
+        }
+        .note-title {
+            font-size: 11px; font-weight: 600; color: #8a7d4a;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+        }
+        .note-content { font-size: 13px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <button class="toolbar-btn">◯</button>
+                <button class="toolbar-btn">↻</button>
+                <div class="divider"></div>
+                <button class="toolbar-btn">⬚</button>
+                <button class="toolbar-btn">🖱</button>
+            </div>
+            <div class="toolbar-section">
+                <input type="text" class="document-title" value="Untitled Diagram">
+            </div>
+            <div class="toolbar-section">
+                <span style="font-size: 12px; color: var(--apple-secondary);">100%</span>
+                <div class="divider"></div>
+                <button class="toolbar-btn primary">Share</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <!-- Left Sidebar -->
+            <div class="sidebar-left">
+                <button class="tool-btn active">
+                    <span class="tool-icon">⬚</span>
+                    <span class="tool-label">Type</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">↔</span>
+                    <span class="tool-label">Line</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">📦</span>
+                    <span class="tool-label">Partition</span>
+                </button>
+                <div class="sidebar-divider"></div>
+                <button class="tool-btn">
+                    <span class="tool-icon">📝</span>
+                    <span class="tool-label">Note</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">👆</span>
+                    <span class="tool-label">Select</span>
+                </button>
+                <div class="sidebar-divider"></div>
+                <button class="tool-btn">
+                    <span class="tool-icon">🗑</span>
+                    <span class="tool-label">Delete</span>
+                </button>
+            </div>
+
+            <!-- Canvas -->
+            <div class="canvas-container">
+                <div class="canvas" id="canvas">
+                    <svg class="connections" id="connections">
+                        <!-- Cardinality Examples -->
+                        
+                        <!-- [1,1] Exactly One -->
+                        <line x1="200" y1="100" x2="350" y2="100" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="185" y1="93" x2="185" y2="107" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="195" y1="93" x2="195" y2="107" stroke="#1d1d1f" stroke-width="1.5"/>
+                        
+                        <!-- [0,1] Optional -->
+                        <line x1="200" y1="180" x2="350" y2="180" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <circle cx="180" cy="180" r="5" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="192" y1="173" x2="192" y2="187" stroke="#1d1d1f" stroke-width="1.5"/>
+                        
+                        <!-- [1,*] One or Many -->
+                        <line x1="200" y1="260" x2="350" y2="260" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="185" y1="253" x2="185" y2="267" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="185" y1="260" x2="200" y2="253" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="185" y1="260" x2="200" y2="267" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="185" y1="260" x2="195" y2="260" stroke="#1d1d1f" stroke-width="1.5"/>
+                        
+                        <!-- [0,*] Zero or Many -->
+                        <line x1="200" y1="340" x2="350" y2="340" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <circle cx="180" cy="340" r="5" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="185" y1="340" x2="200" y2="333" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="185" y1="340" x2="200" y2="347" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="185" y1="340" x2="195" y2="340" stroke="#1d1d1f" stroke-width="1.5"/>
+                        
+                        <!-- Generalization Line -->
+                        <line x1="580" y1="150" x2="580" y2="220" stroke="#1d1d1f" stroke-width="1.5"/>
+                        
+                        <!-- Derived Mapping Slash -->
+                        <line x1="455" y1="415" x2="465" y2="425" stroke="#1d1d1f" stroke-width="1.5"/>
+                        <line x1="455" y1="425" x2="465" y2="415" stroke="#1d1d1f" stroke-width="1.5"/>
+                    </svg>
+
+                    <!-- Cardinality Demo Types -->
+                    <div class="type-box selected" style="top: 75px; left: 70px;">
+                        <span class="semantic-marker">[abstract]</span>
+                        <span class="type-name">Order</span>
+                    </div>
+                    <div class="type-box" style="top: 75px; left: 370px;">
+                        <span class="type-name">LineItem</span>
+                    </div>
+
+                    <div class="type-box" style="top: 155px; left: 70px;">
+                        <span class="type-name">Order</span>
+                    </div>
+                    <div class="type-box" style="top: 155px; left: 370px;">
+                        <span class="type-name">Customer</span>
+                    </div>
+
+                    <div class="type-box" style="top: 235px; left: 70px;">
+                        <span class="type-name">Order</span>
+                    </div>
+                    <div class="type-box" style="top: 235px; left: 370px;">
+                        <span class="type-name">LineItem</span>
+                    </div>
+
+                    <div class="type-box" style="top: 315px; left: 70px;">
+                        <span class="type-name">Person</span>
+                    </div>
+                    <div class="type-box" style="top: 315px; left: 370px;">
+                        <span class="type-name">Order</span>
+                    </div>
+
+                    <div class="type-box" style="top: 395px; left: 70px;">
+                        <span class="semantic-marker">[key: id]</span>
+                        <span class="type-name">Product</span>
+                    </div>
+                    <div class="type-box" style="top: 395px; left: 370px;">
+                        <span class="type-name">Category</span>
+                    </div>
+
+                    <!-- Generalization Demo -->
+                    <div class="type-box" style="top: 100px; left: 520px;">
+                        <span class="type-name">Party</span>
+                    </div>
+                    <div style="position: absolute; top: 230px; left: 450px; border: 1.5px solid #1d1d1f; border-bottom-width: 4px; border-radius: 4px; padding: 12px; display: flex; gap: 12px; width: 260px; background: rgba(255,255,255,0.5);">
+                        <div style="background: white; border: 1px solid #1d1d1f; border-radius: 3px; padding: 8px 12px; font-size: 13px;">Person</div>
+                        <div style="background: white; border: 1px solid #1d1d1f; border-radius: 3px; padding: 8px 12px; font-size: 13px;">Organization</div>
+                    </div>
+
+                    <!-- Note Box -->
+                    <div class="note-box" style="top: 500px; left: 70px;">
+                        <div class="note-title">Constraint</div>
+                        <div class="note-content">An Order must have at least one LineItem</div>
+                    </div>
+
+                    <!-- Labels -->
+                    <div style="position: absolute; top: 80px; left: 500px; font-size: 12px; color: #86868b;">[1,1] Exactly one</div>
+                    <div style="position: absolute; top: 160px; left: 500px; font-size: 12px; color: #86868b;">[0,1] Optional</div>
+                    <div style="position: absolute; top: 240px; left: 500px; font-size: 12px; color: #86868b;">[1,*] One or many</div>
+                    <div style="position: absolute; top: 320px; left: 500px; font-size: 12px; color: #86868b;">[0,*] Zero or many</div>
+                    <div style="position: absolute; top: 400px; left: 500px; font-size: 12px; color: #86868b;">Derived mapping</div>
+                    <div style="position: absolute; top: 200px; left: 460px; font-size: 12px; color: #86868b;">Complete Partition</div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="sidebar-right">
+                <div class="sidebar-header">
+                    <div class="sidebar-title">Properties</div>
+                </div>
+                <div class="sidebar-content">
+                    <div class="property-group">
+                        <div class="property-label">Name</div>
+                        <input type="text" class="property-input" value="Order">
+                    </div>
+                    <div class="property-group">
+                        <div class="property-label">Semantic Tags</div>
+                        <div class="semantic-tags">
+                            <span class="semantic-tag active">abstract</span>
+                            <span class="semantic-tag">immutable</span>
+                            <span class="semantic-tag">singleton</span>
+                            <span class="semantic-tag">list</span>
+                            <span class="semantic-tag">hierarchy</span>
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <div class="property-label">Cardinality (Source)</div>
+                        <select class="property-select">
+                            <option>[1,1] Exactly one</option>
+                            <option>[0,1] Zero or one</option>
+                            <option>[1,*] One or many</option>
+                            <option selected>[0,*] Zero or many</option>
+                            <option>[2,*] Two or more</option>
+                        </select>
+                    </div>
+                    <div class="property-group">
+                        <div class="property-label">Cardinality (Target)</div>
+                        <select class="property-select">
+                            <option selected>[1,1] Exactly one</option>
+                            <option>[0,1] Zero or one</option>
+                            <option>[1,*] One or many</option>
+                            <option>[0,*] Zero or many</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-section">
+                <span style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="collaborator-dot"></span>
+                    1 collaborator online
+                </span>
+            </div>
+            <div class="status-section">
+                <span>6 elements · Saved</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple drag interaction
+        const canvas = document.getElementById('canvas');
+        let selected = document.querySelector('.type-box.selected');
+
+        document.querySelectorAll('.type-box').forEach(box => {
+            box.addEventListener('mousedown', (e) => {
+                if (selected) selected.classList.remove('selected');
+                box.classList.add('selected');
+                selected = box;
+                
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const origLeft = parseInt(box.style.left);
+                const origTop = parseInt(box.style.top);
+                
+                const onMove = (e) => {
+                    box.style.left = (origLeft + e.clientX - startX) + 'px';
+                    box.style.top = (origTop + e.clientY - startY) + 'px';
+                };
+                
+                const onUp = () => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                };
+                
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        });
+    </script>
+</body>
+</html>
