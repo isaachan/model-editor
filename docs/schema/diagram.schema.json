@@ -46,9 +46,9 @@
           { "$ref": "#/definitions/noteElement" }
         ]
       }
-    },
-    "additionalProperties": false
+    }
   },
+  "additionalProperties": false,
   "definitions": {
     "layout": {
       "description": "Layout information (rendering coordinates and size) - separate from semantics",

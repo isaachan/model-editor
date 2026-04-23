@@ -82,7 +82,7 @@ model-editor/
 │   └── vite-env.d.ts           # Vite 类型声明
 ├── docs/                        # 文档目录（已有）
 │   ├── prd.md
-│   ├── DESIGN.md
+│   ├── VISUAL_DESIGN.md
 │   ├── ARCH_DESIGN.md
 │   ├── stories.csv
 │   ├── schema/
