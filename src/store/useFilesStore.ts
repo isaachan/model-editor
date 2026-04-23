@@ -152,15 +152,16 @@ export const useFilesStore = create<FilesState>((set, get) => ({
       set({ storageError: (err as Error).message });
       return;
     }
-    // Keep diagram-store's metadata.title in sync if renaming the current file.
+    // Mirror into the diagram store's metadata.title. This is a real user
+    // edit, so we deliberately let the subscriber schedule a history entry
+    // (do NOT wrap in setApplyingHistory) — otherwise a subsequent Undo
+    // would revert both the rename AND the last prior action.
+    //
+    // Flush any in-flight debounced push first so rename does NOT coalesce
+    // into the previous action's snapshot.
     if (get().currentFileId === id) {
-      const history = useHistoryStore.getState();
-      history.setApplyingHistory(true);
-      try {
-        useDiagramStore.getState().setTitle(trimmed);
-      } finally {
-        history.setApplyingHistory(false);
-      }
+      useHistoryStore.getState().flushPending();
+      useDiagramStore.getState().setTitle(trimmed);
     }
     set({ files: readIndex() });
   },
