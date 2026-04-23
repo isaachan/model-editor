@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Group, Layer, Line, Rect, Stage } from 'react-konva';
+import { Circle, Group, Layer, Line, Rect, Stage } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
-import { CANVAS } from '@/constants/defaults';
+import { CANVAS, GRID } from '@/constants/defaults';
 import { LONG_SEMANTIC } from '@/constants/longSemantic';
 import {
   isGeneralization,
@@ -18,6 +18,7 @@ import {
 } from '@/models/diagram';
 import { routeOrthogonal, type Point, type RoutingResult, type Side } from '@/utils/routing';
 import { computeNoteConnector } from '@/utils/noteConnector';
+import { registerStage } from '@/utils/exportStage';
 import {
   SEMANTIC_CATALOG,
   isMultivalued,
@@ -160,6 +161,7 @@ export function Canvas() {
    */
   const [dragPos, setDragPos] = useState<Record<string, { x: number; y: number }>>({});
   const [spacePressed, setSpacePressed] = useState(false);
+  const [altPressed, setAltPressed] = useState(false);
   const [panSession, setPanSession] = useState<{
     start: Point;
     origin: { x: number; y: number };
@@ -211,6 +213,8 @@ export function Canvas() {
   const resetViewport = useEditorStore((s) => s.resetViewport);
   const setPendingRelationSource = useEditorStore((s) => s.setPendingRelationSource);
   const setPendingGeneralizationParent = useEditorStore((s) => s.setPendingGeneralizationParent);
+  const showGrid = useEditorStore((s) => s.showGrid);
+  const snapToGrid = useEditorStore((s) => s.snapToGrid);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -224,12 +228,21 @@ export function Canvas() {
     return () => ro.disconnect();
   }, []);
 
+  // Register the Konva stage with the module-level singleton so toolbar
+  // export actions (PNG) can reach it without prop drilling.
+  useEffect(() => {
+    registerStage(stageRef.current);
+    return () => registerStage(null);
+  }, [size.width, size.height]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === 'Space' && !isEditableTarget(event.target)) {
         event.preventDefault();
         setSpacePressed(true);
       }
+
+      if (event.altKey) setAltPressed(true);
 
       if ((event.key === 'Delete' || event.key === 'Backspace') && !isEditableTarget(event.target)) {
         if (selectedIds.length === 0) return;
@@ -246,8 +259,12 @@ export function Canvas() {
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.code === 'Space') setSpacePressed(false);
+      if (!event.altKey) setAltPressed(false);
     };
-    const handleBlur = () => setSpacePressed(false);
+    const handleBlur = () => {
+      setSpacePressed(false);
+      setAltPressed(false);
+    };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -547,12 +564,14 @@ export function Canvas() {
   };
 
   const handleTypeDragSettled = (typeId: string, x: number, y: number) => {
+    // Snap to grid (bypassed with Alt) before committing the move.
+    const { x: sx, y: sy } = snapPoint(x, y);
     // Commit the move first so the store has fresh coordinates.
-    moveElement(typeId, x, y);
+    moveElement(typeId, sx, sy);
 
     const center: Point = {
-      x: x + (typesById.get(typeId)?.layout.width ?? 0) / 2,
-      y: y + (typesById.get(typeId)?.layout.height ?? 0) / 2,
+      x: sx + (typesById.get(typeId)?.layout.width ?? 0) / 2,
+      y: sy + (typesById.get(typeId)?.layout.height ?? 0) / 2,
     };
     const hitContainer = containerAtPoint(center);
     const previousOwner = generalizations.find((g) => g.childTypeIds.includes(typeId)) ?? null;
@@ -585,6 +604,39 @@ export function Canvas() {
           : 'default';
   const typesDraggable = currentTool === 'select' && !spacePressed && !panSession;
 
+  /**
+   * Snap a world-space coordinate to the grid when grid-snapping is on.
+   * Hold Alt to temporarily bypass snapping. Pass already-world coords.
+   */
+  const snap = (v: number): number => {
+    if (!snapToGrid || altPressed) return v;
+    return Math.round(v / GRID.size) * GRID.size;
+  };
+  const snapPoint = (x: number, y: number) => ({ x: snap(x), y: snap(y) });
+
+  /**
+   * Grid dot positions covering the current visible area of the stage.
+   * Recomputed each render from viewport + canvas size; cheap enough because
+   * dot count is bounded by screen area / grid size.
+   */
+  const gridDots = (() => {
+    if (!showGrid || size.width === 0 || size.height === 0) return null;
+    const step = GRID.size;
+    const worldLeft = -viewport.x / viewport.scale;
+    const worldTop = -viewport.y / viewport.scale;
+    const worldRight = worldLeft + size.width / viewport.scale;
+    const worldBottom = worldTop + size.height / viewport.scale;
+    const startX = Math.floor(worldLeft / step) * step;
+    const startY = Math.floor(worldTop / step) * step;
+    const dots: { x: number; y: number }[] = [];
+    for (let x = startX; x <= worldRight; x += step) {
+      for (let y = startY; y <= worldBottom; y += step) {
+        dots.push({ x, y });
+      }
+    }
+    return dots;
+  })();
+
   return (
     <div
       ref={containerRef}
@@ -610,6 +662,23 @@ export function Canvas() {
             <Rect width={size.width} height={size.height} fill={CANVAS.background} />
           </Layer>
 
+          {/* Grid layer — dot grid at every GRID.size world-space intersection. */}
+          {gridDots && (
+            <Layer listening={false}>
+              <Group x={viewport.x} y={viewport.y} scaleX={viewport.scale} scaleY={viewport.scale}>
+                {gridDots.map((d) => (
+                  <Circle
+                    key={`${d.x},${d.y}`}
+                    x={d.x}
+                    y={d.y}
+                    radius={GRID.dotRadius / viewport.scale}
+                    fill={GRID.dotColor}
+                  />
+                ))}
+              </Group>
+            </Layer>
+          )}
+
           {/* Generalization layer (below relations and types). */}
           <Layer>
             <Group x={viewport.x} y={viewport.y} scaleX={viewport.scale} scaleY={viewport.scale}>
@@ -629,7 +698,13 @@ export function Canvas() {
                   onDragMove={() => {
                     /* Live drag preview is handled by Konva's local transform; no store writes. */
                   }}
-                  onDragEnd={(dx, dy) => moveGeneralizationBy(gen.id, dx, dy)}
+                  onDragEnd={(dx, dy) => {
+                    // Snap final top-left corner to the grid (bypassed with Alt).
+                    const targetX = gen.layout.x + dx;
+                    const targetY = gen.layout.y + dy;
+                    const { x: sx, y: sy } = snapPoint(targetX, targetY);
+                    moveGeneralizationBy(gen.id, sx - gen.layout.x, sy - gen.layout.y);
+                  }}
                 />
               ))}
             </Group>
@@ -781,7 +856,8 @@ export function Canvas() {
                         setDragPos((prev) => ({ ...prev, [note.id]: { x, y } }))
                       }
                       onDragEnd={(x, y) => {
-                        moveElement(note.id, x, y);
+                        const { x: sx, y: sy } = snapPoint(x, y);
+                        moveElement(note.id, sx, sy);
                         setDragPos((prev) => {
                           const next = { ...prev };
                           delete next[note.id];

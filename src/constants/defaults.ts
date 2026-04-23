@@ -31,6 +31,18 @@ export const CANVAS = {
   background: '#f5f5f7',
 } as const;
 
+/**
+ * Grid settings for background dots and snap-to-grid.
+ * Dots are rendered as small circles at every grid intersection.
+ */
+export const GRID = {
+  /** Grid step in world (pre-scale) pixels. */
+  size: 20,
+  /** Dot radius in screen pixels (independent of scale). */
+  dotRadius: 1,
+  dotColor: '#c7c7cc',
+} as const;
+
 export const GENERALIZATION = {
   /** Default size when the container is first placed (no children yet). */
   defaultWidth: 220,

@@ -21,6 +21,11 @@ interface EditorState {
    */
   pendingGeneralizationParent: string | null;
 
+  /** Show background dot grid. */
+  showGrid: boolean;
+  /** Snap drag / move operations to the grid. */
+  snapToGrid: boolean;
+
   setTool: (tool: ToolMode) => void;
   select: (id: string | null) => void;
   selectMany: (ids: string[]) => void;
@@ -31,17 +36,47 @@ interface EditorState {
   setPendingGeneralizationParent: (id: string | null) => void;
   setViewport: (viewport: Partial<EditorState['viewport']>) => void;
   resetViewport: () => void;
+  setShowGrid: (show: boolean) => void;
+  setSnapToGrid: (snap: boolean) => void;
 }
 
 const DEFAULT_VIEWPORT = { x: 0, y: 0, scale: 1 };
 
-export const useEditorStore = create<EditorState>((set) => ({
+const PREFS_KEY = 'me:editor-prefs';
+type EditorPrefs = { showGrid?: boolean; snapToGrid?: boolean };
+
+function loadPrefs(): EditorPrefs {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as EditorPrefs;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function savePrefs(prefs: EditorPrefs) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    /* quota exceeded — ignore */
+  }
+}
+
+const initialPrefs = loadPrefs();
+
+export const useEditorStore = create<EditorState>((set, get) => ({
   currentTool: 'select',
   selectedIds: [],
   hoveredId: null,
   viewport: DEFAULT_VIEWPORT,
   pendingRelationSource: null,
   pendingGeneralizationParent: null,
+  showGrid: initialPrefs.showGrid ?? true,
+  snapToGrid: initialPrefs.snapToGrid ?? true,
 
   setTool: (tool) =>
     set({ currentTool: tool, pendingRelationSource: null, pendingGeneralizationParent: null }),
@@ -69,4 +104,14 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((state) => ({ viewport: { ...state.viewport, ...viewport } })),
 
   resetViewport: () => set({ viewport: DEFAULT_VIEWPORT }),
+
+  setShowGrid: (show) => {
+    set({ showGrid: show });
+    savePrefs({ showGrid: show, snapToGrid: get().snapToGrid });
+  },
+
+  setSnapToGrid: (snap) => {
+    set({ snapToGrid: snap });
+    savePrefs({ showGrid: get().showGrid, snapToGrid: snap });
+  },
 }));

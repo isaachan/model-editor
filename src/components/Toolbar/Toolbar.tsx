@@ -4,6 +4,8 @@ import { useEditorStore } from '@/store/useEditorStore';
 import { useFilesStore } from '@/store/useFilesStore';
 import { useHistoryStore } from '@/store/useHistoryStore';
 import { performRedo, performUndo } from '@/utils/history';
+import { exportPng } from '@/utils/exportStage';
+import { exportSvg } from '@/utils/exportSvg';
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -29,6 +31,32 @@ export function Toolbar() {
   // shortcut still works because performUndo flushes pending first.
   const canUndo = useHistoryStore((s) => s.past.length > 0);
   const canRedo = useHistoryStore((s) => s.future.length > 0);
+
+  const showGrid = useEditorStore((s) => s.showGrid);
+  const snapToGrid = useEditorStore((s) => s.snapToGrid);
+  const setShowGrid = useEditorStore((s) => s.setShowGrid);
+  const setSnapToGrid = useEditorStore((s) => s.setSnapToGrid);
+
+  const elements = useDiagramStore((s) => s.elements);
+  const currentFileTitle = useFilesStore((s) =>
+    s.files.find((f) => f.id === s.currentFileId)?.title ?? 'diagram',
+  );
+
+  const [pngOpen, setPngOpen] = useState(false);
+  const pngWrapperRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!pngOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!pngWrapperRef.current?.contains(e.target as Node)) setPngOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [pngOpen]);
+
+  const safeFilename = (ext: string) => {
+    const base = currentFileTitle.replace(/[\\/:*?"<>|]/g, '_').trim() || 'diagram';
+    return `${base}.${ext}`;
+  };
 
   const handleDelete = () => {
     if (selectedIds.length === 0) return;
@@ -87,6 +115,68 @@ export function Toolbar() {
         disabled={selectedIds.length === 0}
       />
       <ToolbarButton label="Reset View" onClick={resetViewport} />
+
+      <Divider />
+
+      <ToolbarToggle
+        label="Grid"
+        active={showGrid}
+        onClick={() => setShowGrid(!showGrid)}
+        title="显示背景网格"
+      />
+      <ToolbarToggle
+        label="Snap"
+        active={snapToGrid}
+        onClick={() => setSnapToGrid(!snapToGrid)}
+        title="吸附到网格（按住 Alt 临时关闭）"
+      />
+
+      <Divider />
+
+      <div ref={pngWrapperRef} className="relative">
+        <ToolbarButton
+          label="Export PNG ▾"
+          onClick={() => setPngOpen((v) => !v)}
+          title="导出为 PNG 图片"
+        />
+        {pngOpen && (
+          <div
+            className="absolute left-0 top-full z-50 mt-1 w-32 overflow-hidden rounded-[10px] border shadow-lg"
+            style={{
+              borderColor: 'var(--color-separator)',
+              background: 'var(--color-bg-elevated, #ffffff)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                exportPng(safeFilename('png'), 1);
+                setPngOpen(false);
+              }}
+              className="block w-full px-3 py-2 text-left text-sm hover:bg-black/5"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              1× 分辨率
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                exportPng(safeFilename('png'), 2);
+                setPngOpen(false);
+              }}
+              className="block w-full px-3 py-2 text-left text-sm hover:bg-black/5"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              2× 分辨率
+            </button>
+          </div>
+        )}
+      </div>
+      <ToolbarButton
+        label="Export SVG"
+        onClick={() => exportSvg(elements, safeFilename('svg'))}
+        title="导出为 SVG 矢量图"
+      />
 
       <div className="ml-auto flex items-center">
         <FileSwitcher />
@@ -311,6 +401,34 @@ function ToolbarButton({
       title={title}
       className="rounded-[10px] px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
       style={{ color: 'var(--color-text-primary)' }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function ToolbarToggle({
+  label,
+  active,
+  onClick,
+  title,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-pressed={active}
+      className="rounded-[10px] px-3 py-1.5 text-sm transition-colors"
+      style={{
+        color: active ? 'var(--color-accent, #007aff)' : 'var(--color-text-primary)',
+        background: active ? 'rgba(0,122,255,0.10)' : 'transparent',
+      }}
     >
       {label}
     </button>
