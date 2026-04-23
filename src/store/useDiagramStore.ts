@@ -109,10 +109,16 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     set((s) => ({
       elements: s.elements.map((el) => {
         if (el.id !== relationId || el.type !== 'relation') return el;
+        const nextRange =
+          kind === 'two_or_more'
+            ? [range?.[0] ?? 2, null]
+            : kind === 'range'
+              ? [range?.[0] ?? 1, range?.[1] ?? (range?.[0] ?? 1) + 1]
+              : undefined;
         const updatedEnd = {
           ...el[end],
           cardinality: kind,
-          cardinalityRange: kind === 'range' ? (range ?? [1, null]) : undefined,
+          cardinalityRange: nextRange,
         };
         return { ...el, [end]: updatedEnd };
       }),

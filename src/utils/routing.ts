@@ -23,8 +23,30 @@ export interface RoutingResult {
   targetTangent: Point;
 }
 
+interface RouteOffsetOptions {
+  sourceNormalOffset?: number;
+  targetNormalOffset?: number;
+}
+
+function offsetPointForSide(point: Point, side: Side, amount: number): Point {
+  if (amount === 0) return point;
+
+  switch (side) {
+    case 'left':
+    case 'right':
+      return { x: point.x, y: point.y + amount };
+    case 'top':
+    case 'bottom':
+      return { x: point.x - amount, y: point.y };
+  }
+}
+
 /** Build an orthogonal (horizontal/vertical only) polyline between two rectangles. */
-export function routeOrthogonal(source: Layout, target: Layout): RoutingResult {
+export function routeOrthogonal(
+  source: Layout,
+  target: Layout,
+  offsets: RouteOffsetOptions = {},
+): RoutingResult {
   const sCx = source.x + source.width / 2;
   const sCy = source.y + source.height / 2;
   const tCx = target.x + target.width / 2;
@@ -74,6 +96,9 @@ export function routeOrthogonal(source: Layout, target: Layout): RoutingResult {
       targetTangent = { x: 1, y: 0 };
     }
 
+    sourceAttach = offsetPointForSide(sourceAttach, sourceSide, offsets.sourceNormalOffset ?? 0);
+    targetAttach = offsetPointForSide(targetAttach, targetSide, offsets.targetNormalOffset ?? 0);
+
     if (Math.abs(sourceAttach.y - targetAttach.y) < 0.5) {
       points = [sourceAttach.x, sourceAttach.y, targetAttach.x, targetAttach.y];
     } else {
@@ -105,6 +130,9 @@ export function routeOrthogonal(source: Layout, target: Layout): RoutingResult {
       sourceTangent = { x: 0, y: -1 };
       targetTangent = { x: 0, y: 1 };
     }
+
+    sourceAttach = offsetPointForSide(sourceAttach, sourceSide, offsets.sourceNormalOffset ?? 0);
+    targetAttach = offsetPointForSide(targetAttach, targetSide, offsets.targetNormalOffset ?? 0);
 
     if (Math.abs(sourceAttach.x - targetAttach.x) < 0.5) {
       points = [sourceAttach.x, sourceAttach.y, targetAttach.x, targetAttach.y];

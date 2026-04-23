@@ -35,7 +35,7 @@ export type CardinalityKind =
 export interface RelationEnd {
   typeId: ElementId;
   cardinality: CardinalityKind;
-  /** [min, max] when cardinality === 'range'. max=null means unbounded (*). */
+  /** Parameter tuple for cardinality kinds that need user input. */
   cardinalityRange?: [number, number | null];
 }
 

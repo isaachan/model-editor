@@ -1,7 +1,7 @@
 import { Group, Line } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { RelationElement, TypeElement } from '@/models/diagram';
-import { routeOrthogonal } from '@/utils/routing';
+import type { RoutingResult } from '@/utils/routing';
 import { cardinalityLabel } from '@/utils/cardinality';
 import { CardinalityMarker } from './CardinalityMarker';
 
@@ -9,6 +9,7 @@ interface RelationLineProps {
   relation: RelationElement;
   source: TypeElement;
   target: TypeElement;
+  route: RoutingResult;
   selected: boolean;
   hovered: boolean;
   onSelect: () => void;
@@ -23,14 +24,14 @@ const HIT_STROKE_WIDTH = 14; // invisible fat line for easier clicking
 
 export function RelationLine({
   relation,
-  source,
-  target,
+  source: _source,
+  target: _target,
+  route,
   selected,
   hovered,
   onSelect,
   onHoverChange,
 }: RelationLineProps) {
-  const route = routeOrthogonal(source.layout, target.layout);
   const stroke = selected ? ACCENT : hovered ? ACCENT : STROKE;
   const strokeWidth = selected ? STROKE_WIDTH_SELECTED : STROKE_WIDTH;
 
@@ -78,9 +79,11 @@ export function RelationLine({
         kind={relation.source.cardinality}
         endpoint={route.sourceAttach}
         tangent={route.sourceTangent}
-        rangeLabel={
-          relation.source.cardinality === 'range'
-            ? cardinalityLabel('range', relation.source.cardinalityRange)
+        label={
+          relation.source.cardinality === 'two_or_more'
+            ? String(relation.source.cardinalityRange?.[0] ?? 'n')
+            : relation.source.cardinality === 'range'
+              ? cardinalityLabel('range', relation.source.cardinalityRange)
             : undefined
         }
         stroke={stroke}
@@ -90,9 +93,11 @@ export function RelationLine({
         kind={relation.target.cardinality}
         endpoint={route.targetAttach}
         tangent={route.targetTangent}
-        rangeLabel={
-          relation.target.cardinality === 'range'
-            ? cardinalityLabel('range', relation.target.cardinalityRange)
+        label={
+          relation.target.cardinality === 'two_or_more'
+            ? String(relation.target.cardinalityRange?.[0] ?? 'n')
+            : relation.target.cardinality === 'range'
+              ? cardinalityLabel('range', relation.target.cardinalityRange)
             : undefined
         }
         stroke={stroke}

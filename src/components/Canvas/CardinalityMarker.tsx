@@ -8,8 +8,8 @@ interface CardinalityMarkerProps {
   endpoint: Point;
   /** Unit tangent pointing from endpoint INTO the line (away from box). */
   tangent: Point;
-  /** Custom range label when kind === 'range'. */
-  rangeLabel?: string;
+  /** Custom text label for parameterized cardinalities. */
+  label?: string;
   stroke?: string;
   strokeWidth?: number;
 }
@@ -29,7 +29,7 @@ export function CardinalityMarker({
   kind,
   endpoint,
   tangent,
-  rangeLabel,
+  label,
   stroke = DEFAULT_STROKE,
   strokeWidth = DEFAULT_WIDTH,
 }: CardinalityMarkerProps) {
@@ -111,14 +111,14 @@ export function CardinalityMarker({
       break;
 
     case 'two_or_more': {
-      // "2" label above the base + crow foot
+      // "n" label above the base + crow foot
       const labelAnchor = plusN(at(OFFSET_FAR), HALF_BAR + 6);
       elements.push(
         <Text
           key="label"
-          x={labelAnchor.x - 4}
+          x={labelAnchor.x - 8}
           y={labelAnchor.y - 6}
-          text="2"
+          text={label ?? 'n'}
           fontSize={11}
           fontStyle="600"
           fill={stroke}
@@ -135,14 +135,12 @@ export function CardinalityMarker({
           key="label"
           x={labelAnchor.x - 14}
           y={labelAnchor.y - 6}
-          text={rangeLabel ?? '[n,m]'}
+          text={label ?? '[n,m]'}
           fontSize={11}
           fontStyle="500"
           fill={stroke}
         />,
       );
-      // a small stub bar to anchor visually
-      elements.push(bar(at(OFFSET_NEAR), 'stub', 5));
       break;
     }
 

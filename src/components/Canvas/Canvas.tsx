@@ -5,8 +5,52 @@ import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
 import { CANVAS } from '@/constants/defaults';
 import { isRelation, isType, type TypeElement } from '@/models/diagram';
+import { routeOrthogonal, type RoutingResult, type Side } from '@/utils/routing';
 import { TypeNode } from './TypeNode';
 import { RelationLine } from './RelationLine';
+
+const MARKER_OFFSET_STEP = 18;
+
+interface MarkerEndpoint {
+  relationId: string;
+  end: 'source' | 'target';
+  typeId: string;
+  side: Side;
+  attachX: number;
+  attachY: number;
+}
+
+function buildMarkerOffsetMap(entries: MarkerEndpoint[]) {
+  const grouped = new Map<string, MarkerEndpoint[]>();
+
+  for (const entry of entries) {
+    const key = `${entry.typeId}:${entry.side}`;
+    const bucket = grouped.get(key);
+    if (bucket) bucket.push(entry);
+    else grouped.set(key, [entry]);
+  }
+
+  const offsets = new Map<string, number>();
+
+  for (const group of grouped.values()) {
+    if (group.length < 2) continue;
+
+    group.sort((a, b) => {
+      const axisA = a.side === 'left' || a.side === 'right' ? a.attachY : a.attachX;
+      const axisB = b.side === 'left' || b.side === 'right' ? b.attachY : b.attachX;
+      if (axisA !== axisB) return axisA - axisB;
+      if (a.end !== b.end) return a.end === 'source' ? -1 : 1;
+      return a.relationId.localeCompare(b.relationId);
+    });
+
+    const center = (group.length - 1) / 2;
+    group.forEach((entry, index) => {
+      offsets.set(`${entry.relationId}:${entry.end}`, (index - center) * MARKER_OFFSET_STEP);
+    });
+  }
+
+  return offsets;
+}
 
 export function Canvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -54,6 +98,51 @@ export function Canvas() {
   const types = elements.filter(isType).map(applyDrag);
   const typesById = new Map(types.map((t) => [t.id, t]));
   const relations = elements.filter(isRelation);
+  const baseRelationRenderData = relations
+    .map((relation) => {
+      const source = typesById.get(relation.source.typeId);
+      const target = typesById.get(relation.target.typeId);
+      if (!source || !target) return null;
+
+      return {
+        relation,
+        source,
+        target,
+        route: routeOrthogonal(source.layout, target.layout),
+      };
+    })
+    .filter((entry): entry is { relation: (typeof relations)[number]; source: TypeElement; target: TypeElement; route: RoutingResult } => entry !== null);
+
+  const markerOffsets = buildMarkerOffsetMap(
+    baseRelationRenderData.flatMap(({ relation, route }) => [
+      {
+        relationId: relation.id,
+        end: 'source' as const,
+        typeId: relation.source.typeId,
+        side: route.sourceSide,
+        attachX: route.sourceAttach.x,
+        attachY: route.sourceAttach.y,
+      },
+      {
+        relationId: relation.id,
+        end: 'target' as const,
+        typeId: relation.target.typeId,
+        side: route.targetSide,
+        attachX: route.targetAttach.x,
+        attachY: route.targetAttach.y,
+      },
+    ]),
+  );
+
+  const relationRenderData = baseRelationRenderData.map(({ relation, source, target }) => ({
+    relation,
+    source,
+    target,
+    route: routeOrthogonal(source.layout, target.layout, {
+      sourceNormalOffset: markerOffsets.get(`${relation.id}:source`) ?? 0,
+      targetNormalOffset: markerOffsets.get(`${relation.id}:target`) ?? 0,
+    }),
+  }));
 
   const handleStageMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     const clickedOnEmpty = e.target === e.target.getStage();
@@ -120,22 +209,20 @@ export function Canvas() {
 
           {/* Relation layer (below types so line ends tuck under the boxes) */}
           <Layer>
-            {relations.map((rel) => {
-              const src = typesById.get(rel.source.typeId);
-              const tgt = typesById.get(rel.target.typeId);
-              if (!src || !tgt) return null;
+            {relationRenderData.map(({ relation, source, target, route }) => {
               return (
                 <RelationLine
-                  key={rel.id}
-                  relation={rel}
-                  source={src}
-                  target={tgt}
-                  selected={selectedIds.includes(rel.id)}
-                  hovered={hoveredId === rel.id}
+                  key={relation.id}
+                  relation={relation}
+                  source={source}
+                  target={target}
+                  route={route}
+                  selected={selectedIds.includes(relation.id)}
+                  hovered={hoveredId === relation.id}
                   onSelect={() => {
-                    if (currentTool === 'select') select(rel.id);
+                    if (currentTool === 'select') select(relation.id);
                   }}
-                  onHoverChange={(h) => setHovered(h ? rel.id : null)}
+                  onHoverChange={(h) => setHovered(h ? relation.id : null)}
                 />
               );
             })}
