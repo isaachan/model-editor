@@ -10,13 +10,13 @@ ME-008,Done,As a 建模者，我 want 点击选中画布上的Type节点，so th
 ME-009,Done,As a 建模者，我 want 拖拽移动画布上的Type节点，so that 我可以调整其在图表中的位置,High,Business Story,支持拖拽调整Type节点位置,- 选中Type节点后按住鼠标可以拖拽移动/n- 移动过程中节点跟随鼠标光标实时更新位置/n- 释放鼠标后节点停留在新位置/n- 拖拽操作流畅，无明显滞后
 ME-010,Done,As a 建模者，我 want 在右侧属性面板看到选中Type的名称，so that 我可以查看当前选中元素的属性,High,Business Story,选中Type后右侧面板显示其名称属性,- 选中Type节点后，右侧属性面板显示该节点的属性/n- 属性面板显示"名称"字段和当前值/n- 未选中任何元素时属性面板显示空状态提示
 ME-011,Done,As a 建模者，我 want 在右侧属性面板修改Type的名称，so that 我可以为类型命名有意义的名字,High,Business Story,支持在属性面板编辑Type名称,- 属性面板中的名称字段是可编辑的输入框/n- 修改名称后按回车或失焦自动保存/n- Type节点上的显示名称同步更新/n- 支持中文/英文名称都能正确显示
-ME-012,Backlog,As a 建模者，我 want 在左侧工具栏看到关系线工具选项，so that 我可以选择它来创建类型之间的关系,High,Business Story,左侧工具栏显示关系线工具,- 左侧工具栏显示"关系线"图标或按钮/n- 鼠标悬停有tooltip显示"创建两个Type之间的关系连线"/n- 点击关系线按钮后进入创建关系线创建模式
-ME-013,Backlog,As a 建模者，我 want 在两个Type节点之间创建关系连线，so that 我可以表达类型之间的关联,High,Business Story,使用关系线工具连接两个Type,- 选中关系线工具后，先点击起点Type，再点击终点Type/n- 两个Type之间创建一条实线连接/n- 连线路径自动计算，视觉上清晰美观/n- 创建后连线两端附着在Type节点边框上
-ME-014,Backlog,As a 建模者，我 want 点击选中画布上的关系线，so that 我可以对其进行后续操作,High,Business Story,支持点击选择关系线,- 鼠标移动到关系线上有hover视觉反馈/n- 点击关系线后该连线被选中/n- 选中状态有明显的视觉标识（如高亮颜色变化）/n- 点击画布空白处可以取消选中
-ME-015,Backlog,As a 建模者，我 want 在右侧属性面板看到关系线的基数选项，so that 我可以配置关系的约束,High,Business Story,选中关系线后右侧面板显示基数属性,- 选中关系线后，右侧属性面板显示该连线的属性/n- 显示source端（起点）基数选项/n- 显示target端（终点）基数选项
-ME-016,Backlog,As a 建模者，我 want 设置关系线source端的基数，so that 我可以表达对端的约束,High,Business Story,支持设置关系线起点端的基数标注,- 属性面板中source端基数有下拉选项/n- 支持选择后关系线上起点端显示对应的基数符号/n- 支持的基数类型包括：[1,1]、[0,1]、[1,*]、[0,*]等/n- 基数标注位置正确，不与其他元素重叠
-ME-017,Backlog,As a 建模者，我 want 设置关系线target端的基数，so that 我可以表达另一端的约束,High,Business Story,支持设置关系线终点端的基数标注,- 属性面板中target端基数有下拉选项/n- 选择后关系线上终点端显示对应的基数符号/n- 支持的基数类型与source端相同/n- 两端基数标注位置正确，不与其他元素重叠
-ME-018,Backlog,As a 建模者，我 want 拖拽移动Type节点时关系线自动跟随，so that 图表布局保持一致性,High,Business Story,移动节点时连线自动重绘,- 拖拽移动Type节点时，所有连接到该节点的关系线自动更新路径/n- 连线两端始终附着在Type节点边框上/n- 更新过程流畅，无明显卡顿
+ME-012,Done,As a 建模者，我 want 在左侧工具栏看到关系线工具选项，so that 我可以选择它来创建类型之间的关系,High,Business Story,左侧工具栏显示关系线工具,- 左侧工具栏显示"关系线"图标或按钮/n- 鼠标悬停有tooltip显示"创建两个Type之间的关系连线"/n- 点击关系线按钮后进入创建关系线创建模式
+ME-013,Done,As a 建模者，我 want 在两个Type节点之间创建关系连线，so that 我可以表达类型之间的关联,High,Business Story,使用关系线工具连接两个Type 注意：连接线只能是水平或垂直 不能是斜线,- 选中关系线工具后，先点击起点Type，再点击终点Type/n- 两个Type之间创建一条实线连接/n- 连线路径自动计算，视觉上清晰美观/n- 创建后连线两端附着在Type节点边框上
+ME-014,Done,As a 建模者，我 want 点击选中画布上的关系线，so that 我可以对其进行后续操作,High,Business Story,支持点击选择关系线,- 鼠标移动到关系线上有hover视觉反馈/n- 点击关系线后该连线被选中/n- 选中状态有明显的视觉标识（如高亮颜色变化）/n- 点击画布空白处可以取消选中
+ME-015,Done,As a 建模者，我 want 在右侧属性面板看到关系线的基数选项，so that 我可以配置关系的约束,High,Business Story,选中关系线后右侧面板显示基数属性,- 选中关系线后，右侧属性面板显示该连线的属性/n- 显示source端（起点）基数选项/n- 显示target端（终点）基数选项
+ME-016,Done,As a 建模者，我 want 设置关系线source端的基数，so that 我可以表达对端的约束,High,Business Story,支持设置关系线起点端的基数标注,- 属性面板中source端基数有下拉选项/n- 支持选择后关系线上起点端显示对应的基数符号/n- 支持的基数类型包括：[1,1]、[0,1]、[1,*]、[0,*]等/n- 基数标注位置正确，不与其他元素重叠
+ME-017,Done,As a 建模者，我 want 设置关系线target端的基数，so that 我可以表达另一端的约束,High,Business Story,支持设置关系线终点端的基数标注,- 属性面板中target端基数有下拉选项/n- 选择后关系线上终点端显示对应的基数符号/n- 支持的基数类型与source端相同/n- 两端基数标注位置正确，不与其他元素重叠
+ME-018,Done,As a 建模者，我 want 拖拽移动Type节点时关系线自动跟随，so that 图表布局保持一致性,High,Business Story,移动节点时连线自动重绘,- 拖拽移动Type节点时，所有连接到该节点的关系线自动更新路径/n- 连线两端始终附着在Type节点边框上/n- 更新过程流畅，无明显卡顿
 ME-019,Backlog,As a 建模者，我 want 删除选中的元素，so that 我可以纠正错误的创建,High,Business Story,支持删除选中的Type节点或关系线,- 选中元素后按Delete键可删除/n- 选中元素后点击工具栏删除按钮可删除/n- 删除Type节点后，连接到该节点的所有关系线也一并删除/n- 删除操作可撤销（后续实现）
 ME-020,Backlog,As a 建模者，我 want 框选多个元素，so that 我可以同时操作多个元素,High,Business Story,支持拖拽框选,- 在画布空白处按住鼠标拖拽出现选框/n- 选框内的所有元素被同时选中/n- 选中多个元素后可统一进行后续实现
 ME-021,Backlog,As a 建模者，我 want 缩放画布，so that 我可以在不同尺寸下查看大图,High,Business Story,支持鼠标滚轮缩放,- 支持鼠标滚轮缩放画布/n- 缩放范围至少25% ~ 400%/n- 缩放以鼠标光标位置为中心/n- 缩放操作流畅，无明显卡顿

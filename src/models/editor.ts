@@ -1,1 +1,1 @@
-export type ToolMode = 'select' | 'type';
+export type ToolMode = 'select' | 'type' | 'relation';

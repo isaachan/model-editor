@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
-import type { DiagramElement, DiagramMetadata, TypeElement } from '@/models/diagram';
+import type {
+  CardinalityKind,
+  DiagramElement,
+  DiagramMetadata,
+  RelationElement,
+  TypeElement,
+} from '@/models/diagram';
 import { computeTypeBox } from '@/utils/geometry';
 import { DEFAULT_TYPE_NAME } from '@/constants/defaults';
 
@@ -11,9 +17,17 @@ interface DiagramState {
 
   // Actions
   addTypeAt: (x: number, y: number, name?: string) => TypeElement;
-  updateElement: (id: string, updates: Partial<DiagramElement>) => void;
   renameType: (id: string, name: string) => void;
   moveElement: (id: string, x: number, y: number) => void;
+
+  addRelation: (sourceTypeId: string, targetTypeId: string) => RelationElement | null;
+  setCardinality: (
+    relationId: string,
+    end: 'source' | 'target',
+    kind: CardinalityKind,
+    range?: [number, number | null],
+  ) => void;
+
   deleteElement: (id: string) => void;
   clearAll: () => void;
 }
@@ -51,14 +65,6 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     return element;
   },
 
-  updateElement: (id, updates) =>
-    set((s) => ({
-      elements: s.elements.map((el) =>
-        el.id === id ? ({ ...el, ...updates } as DiagramElement) : el,
-      ),
-      metadata: { ...s.metadata, updatedAt: now() },
-    })),
-
   renameType: (id, name) =>
     set((s) => ({
       elements: s.elements.map((el) => {
@@ -75,15 +81,56 @@ export const useDiagramStore = create<DiagramState>((set) => ({
 
   moveElement: (id, x, y) =>
     set((s) => ({
-      elements: s.elements.map((el) =>
-        el.id === id ? { ...el, layout: { ...el.layout, x, y } } : el,
-      ),
+      elements: s.elements.map((el) => {
+        if (el.id !== id || el.type !== 'type') return el;
+        return { ...el, layout: { ...el.layout, x, y } };
+      }),
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  addRelation: (sourceTypeId, targetTypeId) => {
+    if (sourceTypeId === targetTypeId) return null;
+    const relation: RelationElement = {
+      id: `rel-${nanoid(8)}`,
+      type: 'relation',
+      source: { typeId: sourceTypeId, cardinality: 'exactly_one' },
+      target: { typeId: targetTypeId, cardinality: 'exactly_one' },
+      isDerived: false,
+      semantics: [],
+    };
+    set((s) => ({
+      elements: [...s.elements, relation],
+      metadata: { ...s.metadata, updatedAt: now() },
+    }));
+    return relation;
+  },
+
+  setCardinality: (relationId, end, kind, range) =>
+    set((s) => ({
+      elements: s.elements.map((el) => {
+        if (el.id !== relationId || el.type !== 'relation') return el;
+        const updatedEnd = {
+          ...el[end],
+          cardinality: kind,
+          cardinalityRange: kind === 'range' ? (range ?? [1, null]) : undefined,
+        };
+        return { ...el, [end]: updatedEnd };
+      }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
   deleteElement: (id) =>
     set((s) => ({
-      elements: s.elements.filter((el) => el.id !== id),
+      // Cascade-delete relations connected to a deleted Type (ME-019 groundwork).
+      elements: s.elements.filter((el) => {
+        if (el.id === id) return false;
+        if (
+          el.type === 'relation' &&
+          (el.source.typeId === id || el.target.typeId === id)
+        )
+          return false;
+        return true;
+      }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
@@ -93,3 +140,4 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 }));
+

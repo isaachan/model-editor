@@ -53,6 +53,21 @@ const TOOLS: ToolDef[] = [
       </svg>
     ),
   },
+  {
+    id: 'relation',
+    label: 'Relation',
+    tooltip: '创建两个Type之间的关系连线',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="2" y="8" width="6" height="8" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="16" y="8" width="6" height="8" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="1.5" />
+        {/* crow foot hint on right end */}
+        <line x1="13" y1="12" x2="16" y2="9.5" stroke="currentColor" strokeWidth="1.2" />
+        <line x1="13" y1="12" x2="16" y2="14.5" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
 ];
 
 export function LeftSidebar() {

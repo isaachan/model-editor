@@ -7,9 +7,12 @@ interface TypeNodeProps {
   element: TypeElement;
   selected: boolean;
   hovered: boolean;
+  /** Highlight as pending source during relation-creation. */
+  pendingSource?: boolean;
   draggable: boolean;
   onSelect: () => void;
   onHoverChange: (hovered: boolean) => void;
+  onDragMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
 }
 
@@ -17,19 +20,24 @@ export function TypeNode({
   element,
   selected,
   hovered,
+  pendingSource = false,
   draggable,
   onSelect,
   onHoverChange,
+  onDragMove,
   onDragEnd,
 }: TypeNodeProps) {
   const { layout, name } = element;
 
-  const stroke = selected
+  const stroke = pendingSource
     ? TYPE_NODE.strokeSelected
-    : hovered
-      ? TYPE_NODE.strokeHover
-      : TYPE_NODE.stroke;
-  const strokeWidth = selected ? TYPE_NODE.strokeWidthSelected : TYPE_NODE.strokeWidth;
+    : selected
+      ? TYPE_NODE.strokeSelected
+      : hovered
+        ? TYPE_NODE.strokeHover
+        : TYPE_NODE.stroke;
+  const strokeWidth =
+    selected || pendingSource ? TYPE_NODE.strokeWidthSelected : TYPE_NODE.strokeWidth;
 
   return (
     <Group
@@ -58,6 +66,9 @@ export function TypeNode({
       onDragStart={(e) => {
         e.cancelBubble = true;
       }}
+      onDragMove={(e: KonvaEventObject<DragEvent>) => {
+        onDragMove(e.target.x(), e.target.y());
+      }}
       onDragEnd={(e: KonvaEventObject<DragEvent>) => {
         onDragEnd(e.target.x(), e.target.y());
       }}
@@ -70,10 +81,25 @@ export function TypeNode({
         strokeWidth={strokeWidth}
         /* Fowler notation: sharp corners */
         cornerRadius={0}
-        shadowEnabled={selected || hovered}
-        shadowColor={selected ? TYPE_NODE.selectionShadow.color : '#000'}
-        shadowBlur={selected ? TYPE_NODE.selectionShadow.blur : hovered ? 10 : 0}
-        shadowOpacity={selected ? TYPE_NODE.selectionShadow.opacity : hovered ? 0.1 : 0}
+        dash={pendingSource ? [6, 4] : undefined}
+        shadowEnabled={selected || hovered || pendingSource}
+        shadowColor={
+          selected || pendingSource ? TYPE_NODE.selectionShadow.color : '#000'
+        }
+        shadowBlur={
+          selected || pendingSource
+            ? TYPE_NODE.selectionShadow.blur
+            : hovered
+              ? 10
+              : 0
+        }
+        shadowOpacity={
+          selected || pendingSource
+            ? TYPE_NODE.selectionShadow.opacity
+            : hovered
+              ? 0.1
+              : 0
+        }
         shadowOffsetX={0}
         shadowOffsetY={hovered && !selected ? 2 : 0}
         perfectDrawEnabled={false}

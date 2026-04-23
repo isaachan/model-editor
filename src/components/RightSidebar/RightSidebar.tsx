@@ -1,10 +1,13 @@
 import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
+import { CARDINALITY_OPTIONS } from '@/utils/cardinality';
+import type { CardinalityKind, RelationElement } from '@/models/diagram';
 
 export function RightSidebar() {
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const elements = useDiagramStore((s) => s.elements);
   const renameType = useDiagramStore((s) => s.renameType);
+  const setCardinality = useDiagramStore((s) => s.setCardinality);
 
   const selected = selectedIds.length === 1
     ? elements.find((el) => el.id === selectedIds[0])
@@ -35,6 +38,13 @@ export function RightSidebar() {
             onRename={(name) => renameType(selected.id, name)}
           />
         )}
+        {selected?.type === 'relation' && (
+          <RelationInspector
+            key={selected.id}
+            relation={selected}
+            onChange={(end, kind) => setCardinality(selected.id, end, kind)}
+          />
+        )}
       </div>
     </aside>
   );
@@ -54,6 +64,17 @@ function EmptyState({ multiple }: { multiple: boolean }) {
   );
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="text-[11px] font-semibold uppercase tracking-[0.3px]"
+      style={{ color: 'var(--color-text-secondary)' }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function TypeInspector({
   name,
   onRename,
@@ -64,10 +85,7 @@ function TypeInspector({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.3px]"
-        style={{ color: 'var(--color-text-secondary)' }}>
-        Type
-      </div>
+      <SectionLabel>Type</SectionLabel>
 
       <label className="flex flex-col gap-1.5">
         <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
@@ -89,5 +107,65 @@ function TypeInspector({
         />
       </label>
     </div>
+  );
+}
+
+function RelationInspector({
+  relation,
+  onChange,
+}: {
+  relation: RelationElement;
+  onChange: (end: 'source' | 'target', kind: CardinalityKind) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <SectionLabel>Relation</SectionLabel>
+
+      <CardinalityField
+        label="Source 基数"
+        value={relation.source.cardinality}
+        onChange={(k) => onChange('source', k)}
+      />
+      <CardinalityField
+        label="Target 基数"
+        value={relation.target.cardinality}
+        onChange={(k) => onChange('target', k)}
+      />
+    </div>
+  );
+}
+
+function CardinalityField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: CardinalityKind;
+  onChange: (kind: CardinalityKind) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as CardinalityKind)}
+        className="rounded-[6px] border px-2.5 py-1.5 text-sm outline-none focus:border-[color:var(--color-accent-blue)]"
+        style={{
+          borderColor: 'var(--color-separator)',
+          background: '#fff',
+          color: 'var(--color-text-primary)',
+          transition: 'border-color var(--transition-fast)',
+        }}
+      >
+        {CARDINALITY_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label} — {opt.description}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

@@ -21,6 +21,33 @@ export interface TypeElement {
   layout: Layout;
 }
 
+/** Cardinality enum (schema §definitions.cardinality). */
+export type CardinalityKind =
+  | 'exactly_one'
+  | 'zero_or_one'
+  | 'one_or_more'
+  | 'zero_or_more'
+  | 'two_or_more'
+  | 'range'
+  | 'unknown'
+  | 'no_mapping';
+
+export interface RelationEnd {
+  typeId: ElementId;
+  cardinality: CardinalityKind;
+  /** [min, max] when cardinality === 'range'. max=null means unbounded (*). */
+  cardinalityRange?: [number, number | null];
+}
+
+export interface RelationElement {
+  id: ElementId;
+  type: 'relation';
+  source: RelationEnd;
+  target: RelationEnd;
+  isDerived?: boolean;
+  semantics?: ShortSemantic[];
+}
+
 /** Discriminated union matching schema v1.1 shortSemantic. */
 export type ShortSemantic =
   | { kind: 'abstract' }
@@ -35,11 +62,17 @@ export type ShortSemantic =
   | { kind: 'key'; keyType: string }
   | { kind: 'range'; min: number; max: number | null };
 
-// Placeholders for elements introduced in later stories.
-export type DiagramElement = TypeElement;
+// Placeholders for later-story elements (generalization, note) go here.
+export type DiagramElement = TypeElement | RelationElement;
 
 export interface DiagramMetadata {
   title: string;
   createdAt: number;
   updatedAt: number;
 }
+
+/** Type guards */
+export const isType = (e: DiagramElement): e is TypeElement => e.type === 'type';
+export const isRelation = (e: DiagramElement): e is RelationElement =>
+  e.type === 'relation';
+
