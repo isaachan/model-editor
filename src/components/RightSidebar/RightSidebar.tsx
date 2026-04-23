@@ -9,9 +9,12 @@ import {
   type SemanticCatalogEntry,
   type SemanticScope,
 } from '@/constants/semantics';
+import { LONG_SEMANTIC_HEADINGS } from '@/constants/longSemantic';
 import type {
   CardinalityKind,
   GeneralizationElement,
+  LongSemanticElement,
+  LongSemanticHeading,
   PartitionCompleteness,
   RelationElement,
   RelationEnd,
@@ -99,6 +102,9 @@ export function RightSidebar() {
             element={selected}
             onCompletenessChange={(c) => setGeneralizationCompleteness(selected.id, c)}
           />
+        )}
+        {selected?.type === 'longSemantic' && (
+          <LongSemanticInspector key={selected.id} note={selected} elements={elements} />
         )}
       </div>
     </aside>
@@ -615,6 +621,157 @@ function SemanticSlot({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function LongSemanticInspector({
+  note,
+  elements,
+}: {
+  note: LongSemanticElement;
+  elements: ReturnType<typeof useDiagramStore.getState>['elements'];
+}) {
+  const setLongSemanticHeading = useDiagramStore((s) => s.setLongSemanticHeading);
+  const setLongSemanticBody = useDiagramStore((s) => s.setLongSemanticBody);
+  const setLongSemanticAttachment = useDiagramStore(
+    (s) => s.setLongSemanticAttachment,
+  );
+
+  const typesById = new Map(
+    elements.filter((e): e is TypeElement => e.type === 'type').map((t) => [t.id, t]),
+  );
+  const relations = elements.filter(
+    (e): e is RelationElement => e.type === 'relation',
+  );
+
+  const relationLabel = (r: RelationElement): string => {
+    const s = typesById.get(r.source.typeId)?.name ?? '?';
+    const t = typesById.get(r.target.typeId)?.name ?? '?';
+    return `Relation: ${s} → ${t}`;
+  };
+
+  const attachedLabel = (() => {
+    if (!note.attachedTo) return null;
+    const host = elements.find((e) => e.id === note.attachedTo);
+    if (!host) return null;
+    if (host.type === 'type') return `Type: ${host.name}`;
+    if (host.type === 'relation') return relationLabel(host);
+    return null;
+  })();
+
+  return (
+    <div className="space-y-4">
+      <div
+        className="text-[11px] font-semibold uppercase tracking-[0.3px]"
+        style={{ color: 'var(--color-text-secondary)' }}
+      >
+        长语义陈述
+      </div>
+
+      <div className="space-y-1">
+        <label
+          className="text-[11px]"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          标题
+        </label>
+        <select
+          value={note.heading}
+          onChange={(e) =>
+            setLongSemanticHeading(note.id, e.target.value as LongSemanticHeading)
+          }
+          className="w-full rounded border px-2 py-1.5 text-sm"
+          style={{
+            borderColor: 'var(--color-separator)',
+            background: 'var(--color-surface)',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          {LONG_SEMANTIC_HEADINGS.map((h) => (
+            <option key={h.value} value={h.value}>
+              {h.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-1">
+        <label
+          className="text-[11px]"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          正文
+        </label>
+        <textarea
+          value={note.body}
+          onChange={(e) => setLongSemanticBody(note.id, e.target.value)}
+          rows={6}
+          className="w-full resize-y rounded border px-2 py-1.5 text-sm"
+          style={{
+            borderColor: 'var(--color-separator)',
+            background: 'var(--color-surface)',
+            color: 'var(--color-text-primary)',
+            minHeight: 120,
+          }}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label
+          className="text-[11px]"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          附着于
+        </label>
+        {attachedLabel ? (
+          <div
+            className="flex items-center justify-between rounded border px-2 py-1.5 text-sm"
+            style={{
+              borderColor: 'var(--color-separator)',
+              background: 'var(--color-surface)',
+            }}
+          >
+            <span style={{ color: 'var(--color-text-primary)' }}>{attachedLabel}</span>
+            <button
+              type="button"
+              onClick={() => setLongSemanticAttachment(note.id, null)}
+              className="ml-2 rounded px-2 py-0.5 text-[11px]"
+              style={{
+                color: 'var(--color-text-secondary)',
+                border: '1px solid var(--color-separator)',
+              }}
+            >
+              解除附着
+            </button>
+          </div>
+        ) : (
+          <select
+            value=""
+            onChange={(e) => {
+              if (e.target.value) setLongSemanticAttachment(note.id, e.target.value);
+            }}
+            className="w-full rounded border px-2 py-1.5 text-sm"
+            style={{
+              borderColor: 'var(--color-separator)',
+              background: 'var(--color-surface)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            <option value="">（未附着 — 选择附着目标）</option>
+            {Array.from(typesById.values()).map((t) => (
+              <option key={t.id} value={t.id}>
+                Type: {t.name}
+              </option>
+            ))}
+            {relations.map((r) => (
+              <option key={r.id} value={r.id}>
+                {relationLabel(r)}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
     </div>
   );
 }

@@ -70,7 +70,11 @@ export type ShortSemantic =
   | { kind: 'range'; min: number; max: number | null };
 
 // Placeholders for later-story elements (generalization, note) go here.
-export type DiagramElement = TypeElement | RelationElement | GeneralizationElement;
+export type DiagramElement =
+  | TypeElement
+  | RelationElement
+  | GeneralizationElement
+  | LongSemanticElement;
 
 export type PartitionCompleteness = 'complete' | 'incomplete';
 
@@ -92,6 +96,29 @@ export interface GeneralizationElement {
   layout: Layout;
 }
 
+/**
+ * Long semantic statement — the "folded-corner sticky note" symbol in Fowler
+ * notation. Phase 1 supports three headings (Constraint / Derivation / Note);
+ * the reserved headings Instances / Method / Overload depend on Types owning
+ * attributes/operations and are deferred.
+ *
+ * `attachedTo` is an optional id of a Type or Relation. A note with no
+ * attachment is rendered alone; a note with attachment renders a dashed
+ * connector from its nearest edge to the host's nearest edge. Notes are
+ * positioned in absolute canvas coordinates and do NOT follow their host
+ * when the host is moved — only the dashed connector is re-routed.
+ */
+export type LongSemanticHeading = 'constraint' | 'derivation' | 'note';
+
+export interface LongSemanticElement {
+  id: ElementId;
+  type: 'longSemantic';
+  heading: LongSemanticHeading;
+  body: string;
+  attachedTo?: ElementId;
+  layout: Layout;
+}
+
 export interface DiagramMetadata {
   title: string;
   createdAt: number;
@@ -104,4 +131,6 @@ export const isRelation = (e: DiagramElement): e is RelationElement =>
   e.type === 'relation';
 export const isGeneralization = (e: DiagramElement): e is GeneralizationElement =>
   e.type === 'generalization';
+export const isLongSemantic = (e: DiagramElement): e is LongSemanticElement =>
+  e.type === 'longSemantic';
 

@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { Group, Layer, Rect, Stage } from 'react-konva';
+import { Group, Layer, Line, Rect, Stage } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
 import { CANVAS } from '@/constants/defaults';
-import { isGeneralization, isRelation, isType, type GeneralizationElement, type ShortSemantic, type TypeElement } from '@/models/diagram';
+import { LONG_SEMANTIC } from '@/constants/longSemantic';
+import {
+  isGeneralization,
+  isLongSemantic,
+  isRelation,
+  isType,
+  type GeneralizationElement,
+  type LongSemanticElement,
+  type ShortSemantic,
+  type TypeElement,
+} from '@/models/diagram';
 import { routeOrthogonal, type Point, type RoutingResult, type Side } from '@/utils/routing';
+import { computeNoteConnector } from '@/utils/noteConnector';
 import {
   SEMANTIC_CATALOG,
   isMultivalued,
@@ -16,6 +27,7 @@ import {
 import { TypeNode } from './TypeNode';
 import { RelationLine } from './RelationLine';
 import { GeneralizationBox } from './GeneralizationBox';
+import { StickyNote } from './StickyNote';
 
 const MARKER_OFFSET_STEP = 18;
 const MIN_SCALE = 0.25;
@@ -104,6 +116,33 @@ function routeBounds(points: number[]): Bounds {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
+/** Midpoint along a Konva polyline (flat [x1,y1,x2,y2,...] form). */
+function polylineMid(points: number[]): Point {
+  if (points.length < 4) return { x: 0, y: 0 };
+  let total = 0;
+  const segs: number[] = [];
+  for (let i = 2; i < points.length; i += 2) {
+    const dx = points[i] - points[i - 2];
+    const dy = points[i + 1] - points[i - 1];
+    const d = Math.hypot(dx, dy);
+    segs.push(d);
+    total += d;
+  }
+  let target = total / 2;
+  let idx = 0;
+  while (idx < segs.length && target > segs[idx]) {
+    target -= segs[idx];
+    idx += 1;
+  }
+  const x1 = points[idx * 2];
+  const y1 = points[idx * 2 + 1];
+  const x2 = points[idx * 2 + 2];
+  const y2 = points[idx * 2 + 3];
+  const segLen = segs[idx] || 1;
+  const t = target / segLen;
+  return { x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t };
+}
+
 function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
@@ -155,6 +194,7 @@ export function Canvas() {
   const addTypeSemantic = useDiagramStore((s) => s.addTypeSemantic);
   const addRelationMappingSemantic = useDiagramStore((s) => s.addRelationMappingSemantic);
   const addRelationAssociationSemantic = useDiagramStore((s) => s.addRelationAssociationSemantic);
+  const addLongSemanticAt = useDiagramStore((s) => s.addLongSemanticAt);
 
   const currentTool = useEditorStore((s) => s.currentTool);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -234,10 +274,17 @@ export function Canvas() {
     return { ...el, layout: { ...el.layout, x: override.x, y: override.y } };
   };
 
+  const applyDragNote = (el: LongSemanticElement): LongSemanticElement => {
+    const override = dragPos[el.id];
+    if (!override) return el;
+    return { ...el, layout: { ...el.layout, x: override.x, y: override.y } };
+  };
+
   const types = elements.filter(isType).map(applyDrag);
   const typesById = new Map(types.map((t) => [t.id, t]));
   const relations = elements.filter(isRelation);
   const generalizations = elements.filter(isGeneralization);
+  const longSemantics = elements.filter(isLongSemantic);
   const generalizationsWithParent = generalizations
     .map((gen) => {
       const parent = typesById.get(gen.parentTypeId);
@@ -398,6 +445,18 @@ export function Canvas() {
       return;
     }
 
+    if (currentTool === 'longSemantic') {
+      // Empty-canvas click creates an unattached sticky note centered at the
+      // pointer. Switching back to select mirrors the Type-tool flow.
+      const created = addLongSemanticAt(
+        worldPointer.x - LONG_SEMANTIC.defaultWidth / 2,
+        worldPointer.y - LONG_SEMANTIC.defaultHeight / 2,
+      );
+      setTool('select');
+      select(created.id);
+      return;
+    }
+
     setMarquee({ start: worldPointer, current: worldPointer });
   };
 
@@ -520,7 +579,8 @@ export function Canvas() {
         : currentTool === 'type' ||
             currentTool === 'relation' ||
             currentTool === 'generalization' ||
-            currentTool === 'shortSemantic'
+            currentTool === 'shortSemantic' ||
+            currentTool === 'longSemantic'
           ? 'crosshair'
           : 'default';
   const typesDraggable = currentTool === 'select' && !spacePressed && !panSession;
@@ -598,6 +658,16 @@ export function Canvas() {
                           id: relation.id,
                           endChoice: null,
                         });
+                      } else if (currentTool === 'longSemantic') {
+                        // Create a note near the relation midpoint, attached.
+                        const mid = polylineMid(route.points);
+                        const created = addLongSemanticAt(
+                          mid.x - LONG_SEMANTIC.defaultWidth / 2,
+                          mid.y + 40,
+                          { attachedTo: relation.id },
+                        );
+                        setTool('select');
+                        select(created.id);
                       }
                     }}
                     onHoverChange={(h) => setHovered(h ? relation.id : null)}
@@ -629,6 +699,15 @@ export function Canvas() {
                     } else if (currentTool === 'shortSemantic') {
                       select(el.id);
                       openSemanticPickerFor({ kind: 'type', id: el.id });
+                    } else if (currentTool === 'longSemantic') {
+                      // Attach a sticky note below the Type by default.
+                      const created = addLongSemanticAt(
+                        el.layout.x + el.layout.width / 2 - LONG_SEMANTIC.defaultWidth / 2,
+                        el.layout.y + el.layout.height + 40,
+                        { attachedTo: el.id, heading: 'constraint' },
+                      );
+                      setTool('select');
+                      select(created.id);
                     } else {
                       select(el.id);
                     }
@@ -663,6 +742,58 @@ export function Canvas() {
               )}
             </Group>
           </Layer>
+
+          {/* Long-semantic layer: notes + dashed connectors to their hosts. */}
+          <Layer>
+            <Group x={viewport.x} y={viewport.y} scaleX={viewport.scale} scaleY={viewport.scale}>
+              {longSemantics.map((note) => {
+                const applied = applyDragNote(note);
+                const connector = computeNoteConnector(applied, elements);
+                return (
+                  <Group key={note.id}>
+                    {connector && (
+                      <Line
+                        points={[
+                          connector.from.x,
+                          connector.from.y,
+                          connector.to.x,
+                          connector.to.y,
+                        ]}
+                        stroke={LONG_SEMANTIC.connectorStroke}
+                        strokeWidth={1}
+                        dash={[LONG_SEMANTIC.connectorDash[0], LONG_SEMANTIC.connectorDash[1]]}
+                        listening={false}
+                      />
+                    )}
+                    <StickyNote
+                      element={applied}
+                      selected={selectedIds.includes(note.id)}
+                      hovered={hoveredId === note.id}
+                      panModeActive={spacePressed}
+                      draggable={typesDraggable}
+                      onSelect={() => {
+                        if (currentTool === 'select' || currentTool === 'longSemantic') {
+                          select(note.id);
+                        }
+                      }}
+                      onHoverChange={(h) => setHovered(h ? note.id : null)}
+                      onDragMove={(x, y) =>
+                        setDragPos((prev) => ({ ...prev, [note.id]: { x, y } }))
+                      }
+                      onDragEnd={(x, y) => {
+                        moveElement(note.id, x, y);
+                        setDragPos((prev) => {
+                          const next = { ...prev };
+                          delete next[note.id];
+                          return next;
+                        });
+                      }}
+                    />
+                  </Group>
+                );
+              })}
+            </Group>
+          </Layer>
         </Stage>
       )}
 
@@ -691,6 +822,19 @@ export function Canvas() {
           }}
         >
           点击 Type 或 Relation 以添加短语义标记（ESC 退出）
+        </div>
+      )}
+
+      {currentTool === 'longSemantic' && (
+        <div
+          className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-full border px-4 py-2 text-xs shadow-sm"
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderColor: 'var(--color-separator)',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          点击 Type / Relation 附着长语义便签；点空白处创建游离便签（ESC 退出）
         </div>
       )}
 

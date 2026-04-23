@@ -6,6 +6,8 @@ import type {
   DiagramMetadata,
   GeneralizationElement,
   Layout,
+  LongSemanticElement,
+  LongSemanticHeading,
   PartitionCompleteness,
   RelationElement,
   ShortSemantic,
@@ -14,6 +16,7 @@ import type {
 import { isGeneralization, isType } from '@/models/diagram';
 import { computeTypeBox } from '@/utils/geometry';
 import { DEFAULT_TYPE_NAME, GENERALIZATION } from '@/constants/defaults';
+import { LONG_SEMANTIC } from '@/constants/longSemantic';
 
 interface DiagramState {
   version: string;
@@ -80,6 +83,20 @@ interface DiagramState {
   addRelationAssociationSemantic: (relationId: string, marker: ShortSemantic) => void;
   /** Remove a marker from the association by index. */
   removeRelationAssociationSemantic: (relationId: string, index: number) => void;
+
+  /**
+   * Create a long-semantic sticky note at (x, y). If `attachedTo` is given
+   * and references a live Type or Relation, the note starts attached; the
+   * dashed connector is computed on render.
+   */
+  addLongSemanticAt: (
+    x: number,
+    y: number,
+    options?: { attachedTo?: string; heading?: LongSemanticHeading; body?: string },
+  ) => LongSemanticElement;
+  setLongSemanticHeading: (id: string, heading: LongSemanticHeading) => void;
+  setLongSemanticBody: (id: string, body: string) => void;
+  setLongSemanticAttachment: (id: string, attachedTo: string | null) => void;
 
   /**
    * Bulk-replace persistent state. Used by file-load and undo/redo.
@@ -240,8 +257,11 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   moveElement: (id, x, y) =>
     set((s) => {
       const next = s.elements.map((el) => {
-        if (el.id !== id || el.type !== 'type') return el;
-        return { ...el, layout: { ...el.layout, x, y } };
+        if (el.id !== id) return el;
+        if (el.type === 'type' || el.type === 'longSemantic') {
+          return { ...el, layout: { ...el.layout, x, y } };
+        }
+        return el;
       });
       return {
         elements: recomputeAllContainers(next),
@@ -492,6 +512,77 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
+  addLongSemanticAt: (x, y, options) => {
+    // Validate attachedTo: must reference a Type or Relation currently in the
+    // diagram. Anything else (including the note's own id, or a generalization)
+    // is silently dropped to free-floating.
+    const note: LongSemanticElement = {
+      id: `note-${nanoid(8)}`,
+      type: 'longSemantic',
+      heading: options?.heading ?? 'note',
+      body: options?.body ?? '',
+      layout: {
+        x,
+        y,
+        width: LONG_SEMANTIC.defaultWidth,
+        height: LONG_SEMANTIC.defaultHeight,
+      },
+    };
+    set((s) => {
+      if (options?.attachedTo) {
+        const host = s.elements.find((e) => e.id === options.attachedTo);
+        if (host && (host.type === 'type' || host.type === 'relation')) {
+          note.attachedTo = host.id;
+        }
+      }
+      return {
+        elements: [...s.elements, note],
+        metadata: { ...s.metadata, updatedAt: now() },
+      };
+    });
+    return note;
+  },
+
+  setLongSemanticHeading: (id, heading) =>
+    set((s) => ({
+      elements: s.elements.map((el) =>
+        el.id === id && el.type === 'longSemantic' ? { ...el, heading } : el,
+      ),
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  setLongSemanticBody: (id, body) =>
+    set((s) => ({
+      elements: s.elements.map((el) =>
+        el.id === id && el.type === 'longSemantic' ? { ...el, body } : el,
+      ),
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  setLongSemanticAttachment: (id, attachedTo) =>
+    set((s) => {
+      // Normalize: null or missing host → free-floating; a note cannot
+      // attach to itself or to a non-existent element.
+      let nextAttached: string | undefined;
+      if (attachedTo) {
+        const host = s.elements.find((e) => e.id === attachedTo);
+        if (host && host.id !== id && (host.type === 'type' || host.type === 'relation')) {
+          nextAttached = host.id;
+        }
+      }
+      return {
+        elements: s.elements.map((el) => {
+          if (el.id !== id || el.type !== 'longSemantic') return el;
+          if (nextAttached === undefined) {
+            const { attachedTo: _, ...rest } = el;
+            return rest as LongSemanticElement;
+          }
+          return { ...el, attachedTo: nextAttached };
+        }),
+        metadata: { ...s.metadata, updatedAt: now() },
+      };
+    }),
+
   replaceContent: (content) =>
     set(() => ({
       version: content.version,
@@ -511,6 +602,8 @@ export const useDiagramStore = create<DiagramState>((set) => ({
  *   only the container itself is removed.
  * - When a Type is deleted but its container survives, remove it from that
  *   container's childTypeIds (caller should recompute container layout).
+ * - Long-semantic notes attached to a deleted host are NOT deleted; they
+ *   are demoted to unattached (free floating) instead.
  */
 function cascadeDelete(elements: DiagramElement[], idsToDelete: Set<string>): DiagramElement[] {
   const deletedTypeIds = new Set(
@@ -520,6 +613,18 @@ function cascadeDelete(elements: DiagramElement[], idsToDelete: Set<string>): Di
   for (const el of elements) {
     if (el.type === 'generalization' && deletedTypeIds.has(el.parentTypeId)) {
       idsToDelete.add(el.id);
+    }
+  }
+  // Collect ids that will disappear after this pass so attached notes can be
+  // demoted correctly. This includes explicit deletions plus relations that
+  // get cascade-removed because one of their endpoint Types is deleted.
+  const disappearingIds = new Set<string>(idsToDelete);
+  for (const el of elements) {
+    if (
+      el.type === 'relation' &&
+      (deletedTypeIds.has(el.source.typeId) || deletedTypeIds.has(el.target.typeId))
+    ) {
+      disappearingIds.add(el.id);
     }
   }
   return elements
@@ -539,6 +644,15 @@ function cascadeDelete(elements: DiagramElement[], idsToDelete: Set<string>): Di
           ...el,
           childTypeIds: el.childTypeIds.filter((cid) => !deletedTypeIds.has(cid)),
         };
+      }
+      if (
+        el.type === 'longSemantic' &&
+        el.attachedTo &&
+        disappearingIds.has(el.attachedTo)
+      ) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { attachedTo: _discard, ...rest } = el;
+        return rest as LongSemanticElement;
       }
       return el;
     });

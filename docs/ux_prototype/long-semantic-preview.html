@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Long Semantic Prototype — ME-035 ~ ME-038</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    padding: 40px;
+    line-height: 1.55;
+  }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 32px 0 10px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: #1d1d1f; }
+  .subtitle { font-size: 13px; color: #86868b; margin-bottom: 6px; }
+  .story-tag {
+    display: inline-block; color: white; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; margin-right: 6px; background: #007aff;
+  }
+  .story-tag.q { background: #ff9500; }
+  .story-tag.na { background: #86868b; }
+
+  .grid  { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .frame {
+    background: white; border-radius: 14px; box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+    padding: 18px; display: flex; flex-direction: column;
+  }
+  .frame .caption { font-size: 12px; color: #515154; margin-top: 10px; }
+  .canvas {
+    background: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
+    background-size: 20px 20px;
+    border-radius: 10px; border: 1px solid #e5e5ea; height: 280px;
+  }
+  .canvas.short { height: 200px; }
+  .canvas.tall  { height: 380px; }
+  svg { width: 100%; height: 100%; }
+
+  .note-box {
+    background: #fff8e5; border: 1px solid #f2d37a; border-radius: 10px;
+    padding: 14px 18px; margin-top: 16px; font-size: 13px;
+  }
+  .info-box {
+    background: #eaf4ff; border: 1px solid #b4d8ff; border-radius: 10px;
+    padding: 14px 18px; margin-top: 16px; font-size: 13px;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+  th, td {
+    border: 1px solid #e5e5ea; padding: 8px 10px; text-align: left; vertical-align: top;
+  }
+  th { background: #f5f5f7; font-weight: 600; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         background: #f0f0f3; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  /* HTML mockups of the sticky note */
+  .sticky-row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  .sticky {
+    position: relative;
+    width: 220px;
+    background: #fffbe6;              /* note paper */
+    border: 1px solid #d4b94e;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    padding: 10px 12px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #1d1d1f;
+  }
+  /* folded corner */
+  .sticky::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 18px; height: 18px;
+    background: linear-gradient(135deg, transparent 50%, #e9d380 50%);
+    border-left: 1px solid #d4b94e;
+    border-bottom: 1px solid #d4b94e;
+  }
+  .sticky .heading {
+    font-weight: 700; font-style: italic; margin-bottom: 4px;
+  }
+  .sticky .heading.constraint  { color: #b36200; }
+  .sticky .heading.derivation  { color: #2f6bff; }
+  .sticky .heading.note        { color: #515154; }
+  .sticky textarea {
+    width: 100%; border: none; background: transparent; resize: vertical;
+    font: inherit; color: inherit; outline: none; min-height: 52px;
+  }
+  .sticky select, .sticky input {
+    font-family: inherit; font-size: 12px;
+  }
+
+  /* Left sidebar */
+  .left-sidebar {
+    width: 64px; background: rgba(255,255,255,0.9); border-right: 1px solid #e5e5ea;
+    border-radius: 10px; padding: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .tool {
+    width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: transparent; font-size: 14px;
+  }
+  .tool.active { background: rgba(0,122,255,0.12); color: #007aff; box-shadow: inset 0 0 0 1.5px #007aff; }
+
+  /* Right inspector */
+  .inspector { width: 300px; background: white; border: 1px solid #e5e5ea; border-radius: 10px; padding: 14px; font-size: 13px; }
+  .inspector .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 0.3px; color: #86868b; text-transform: uppercase; margin-bottom: 8px; }
+  .inspector .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .inspector .field label { font-size: 12px; color: #515154; }
+  .inspector input, .inspector select, .inspector textarea {
+    border: 1px solid #d4d4d9; border-radius: 6px; padding: 6px 8px; font-family: inherit; font-size: 13px;
+  }
+  .inspector textarea { min-height: 100px; resize: vertical; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid #e5e5ea; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #fff;
+  }
+
+  .side-by-side { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<h1>长语义便签 (Long Semantic Statements) — Prototype</h1>
+<div class="subtitle">
+  <span class="story-tag">ME-035</span>
+  <span class="story-tag">ME-036</span>
+  <span class="story-tag">ME-037</span>
+  <span class="story-tag">ME-038</span>
+  对应 PRD §3.1（长语义陈述），参照 docs/diagram-samples/SemanticStatements.png
+</div>
+
+<!-- =============================== §1 =============================== -->
+<h2>§1 左侧工具栏入口 (ME-035)</h2>
+<div class="grid">
+  <div class="frame">
+    <h3>新增工具按钮：Long Semantic</h3>
+    <div class="side-by-side" style="margin-top: 10px;">
+      <div class="left-sidebar">
+        <div class="tool" title="Select">▸</div>
+        <div class="tool" title="Type">▯</div>
+        <div class="tool" title="Relation">━</div>
+        <div class="tool" title="Generalization">▽</div>
+        <div class="tool" title="Short Semantic">[ ]</div>
+        <div class="tool active" title="Long Semantic">📎</div>
+      </div>
+      <div style="font-size: 12px; color: #515154; max-width: 340px;">
+        <p>左侧工具栏追加一枚 <b>Long Semantic</b> 按钮（tooltip：<i>"添加长语义陈述便签"</i>）。</p>
+        <p style="margin-top: 6px;">选中后，画布空白处点击 → 创建一个未附着便签；点击 Type / Relation → 创建一个已附着便签（见 §4）。</p>
+        <p style="margin-top: 6px;">图标建议：折角便签剪影，或 <code>¶</code> 段落符号。此处暂用 <code>📎</code> 示意。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <h3>与 Short Semantic 的区别</h3>
+    <table>
+      <tr><th></th><th>Short [marker]</th><th>Long Note (this feature)</th></tr>
+      <tr><td>形状</td><td>方括号文字</td><td>折角便签矩形</td></tr>
+      <tr><td>位置</td><td>紧贴宿主（Type 顶上/关系线旁）</td><td>独立元素，自由摆放 + 虚线连到宿主</td></tr>
+      <tr><td>内容</td><td>单词预设枚举</td><td>标题(枚举) + 多行自由文本</td></tr>
+      <tr><td>作用对象</td><td>Type / Mapping / Association</td><td>Type / Relation / 无附着</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- =============================== §2 =============================== -->
+<h2>§2 便签样式 (ME-036)</h2>
+<div class="frame">
+  <h3>折角矩形 · 标题(斜体加粗) · 正文 · 颜色按标题分</h3>
+  <div class="sticky-row" style="margin-top: 14px;">
+    <div class="sticky">
+      <div class="heading constraint">Constraint:</div>
+      <div>some restriction on Type-B</div>
+    </div>
+    <div class="sticky">
+      <div class="heading derivation">Derivation:</div>
+      <div>orders where order.total &gt;= 1000 and orderedAt within last 30 days</div>
+    </div>
+    <div class="sticky">
+      <div class="heading note">Note:</div>
+      <div>临时备忘：待与业务方确认字段命名。</div>
+    </div>
+  </div>
+  <div class="caption" style="margin-top: 14px;">
+    还原 SemanticStatements.png 第 3 张：<b>折角</b>（右上角折起）是视觉核心；<b>标题</b>使用斜体加冒号（<span class="mono"><i>Constraint:</i></span>）；<b>正文</b>左对齐、可多行；
+    便签整体可自适应内容高度，最小尺寸约 180 × 80。
+  </div>
+</div>
+
+<div class="note-box">
+  <b>决策点 §2 · 颜色方案</b>：Constraint = 琥珀/橙（警戒意味）、Derivation = 蓝（逻辑/公式）、Note = 中性灰。
+  <br/>
+  <b>建议</b>：三个标题使用同一米色底（<code>#fffbe6</code>，便签纸），仅顶部标题文字颜色区分，避免整张便签色彩过饱和干扰画布。
+</div>
+
+<!-- =============================== §3 =============================== -->
+<h2>§3 标题类型 (ME-037)</h2>
+<div class="grid">
+  <div class="frame">
+    <h3>右侧 Inspector · 选中便签时</h3>
+    <div class="inspector" style="margin-top: 8px;">
+      <div class="sec-title">Long Semantic</div>
+
+      <div class="field">
+        <label>标题类型 / Heading</label>
+        <select>
+          <option>Constraint — 业务约束</option>
+          <option selected>Derivation — 派生映射计算逻辑</option>
+          <option>Note — 非正式描述</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>正文 / Body</label>
+        <textarea>orders where order.total >= 1000
+and orderedAt within last 30 days</textarea>
+      </div>
+
+      <div class="field">
+        <label>附着目标 / Attached To</label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="pill">Relation: Customer → Order</span>
+          <button style="border:none; background:transparent; color:#007aff; cursor:pointer; font-size:12px;">解除附着</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <h3>第一阶段支持的三种标题</h3>
+    <table>
+      <tr><th>Heading</th><th>附着对象</th><th>语义</th><th>颜色</th></tr>
+      <tr><td><i>Constraint:</i></td><td>Type</td><td>业务约束断言</td><td>琥珀 #b36200</td></tr>
+      <tr><td><i>Derivation:</i></td><td>派生 Relation / Mapping</td><td>派生计算逻辑</td><td>蓝 #2f6bff</td></tr>
+      <tr><td><i>Note:</i></td><td>任何对象或独立</td><td>非正式注释</td><td>灰 #515154</td></tr>
+    </table>
+    <div class="note-box" style="margin-top: 12px;">
+      <b>后续预留</b>：Instances / Method / Overload 三种标题依赖 Type 拥有「属性 / 操作」的能力，当前 Type 只有名称，暂不纳入 schema 与 UI。
+    </div>
+  </div>
+</div>
+
+<!-- =============================== §4 =============================== -->
+<h2>§4 附着与连接线 (ME-038)</h2>
+<div class="frame">
+  <h3>还原样图：Type-B + Constraint Note</h3>
+  <div class="canvas tall" style="margin-top: 10px;">
+    <svg viewBox="0 0 760 360">
+      <!-- Type-A -->
+      <rect x="60" y="110" width="120" height="54" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+      <text x="120" y="142" text-anchor="middle" font-size="14" fill="#1d1d1f">Type-A</text>
+      <!-- [singleton] over Type-A -->
+      <text x="120" y="100" text-anchor="middle" font-size="11" fill="#515154"
+            font-family="ui-monospace,SFMono-Regular,Menlo,monospace">[singleton]</text>
+
+      <!-- relation line -->
+      <line x1="180" y1="137" x2="480" y2="137" stroke="#1d1d1f" stroke-width="1.5"/>
+      <!-- exactly-one ticks on left end -->
+      <line x1="194" y1="127" x2="194" y2="147" stroke="#1d1d1f" stroke-width="1.5"/>
+      <line x1="200" y1="127" x2="200" y2="147" stroke="#1d1d1f" stroke-width="1.5"/>
+      <!-- zero-or-more crowfoot on right end -->
+      <circle cx="472" cy="137" r="5" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+      <line x1="467" y1="137" x2="480" y2="127" stroke="#1d1d1f" stroke-width="1.5"/>
+      <line x1="467" y1="137" x2="480" y2="147" stroke="#1d1d1f" stroke-width="1.5"/>
+      <!-- [list] marker near midpoint -->
+      <text x="230" y="122" font-size="11" fill="#515154"
+            font-family="ui-monospace,SFMono-Regular,Menlo,monospace">[list]</text>
+
+      <!-- Type-B -->
+      <rect x="480" y="110" width="120" height="54" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+      <text x="540" y="142" text-anchor="middle" font-size="14" fill="#1d1d1f">Type-B</text>
+
+      <!-- attachment anchor on Type-B bottom -->
+      <circle cx="580" cy="164" r="4" fill="white" stroke="#1d1d1f" stroke-width="1.2"/>
+
+      <!-- dashed connector -->
+      <line x1="580" y1="168" x2="580" y2="240" stroke="#515154" stroke-width="1" stroke-dasharray="4 3"/>
+
+      <!-- sticky note (SVG rendering) -->
+      <g>
+        <!-- body with folded corner via path -->
+        <path d="M 490 240 L 650 240 L 670 260 L 670 320 L 490 320 Z"
+              fill="#fffbe6" stroke="#d4b94e" stroke-width="1"/>
+        <!-- fold triangle -->
+        <path d="M 650 240 L 670 260 L 650 260 Z"
+              fill="#e9d380" stroke="#d4b94e" stroke-width="1"/>
+        <text x="500" y="262" font-size="13" font-style="italic" font-weight="700" fill="#b36200">Constraint:</text>
+        <text x="500" y="282" font-size="13" fill="#1d1d1f">some restriction on</text>
+        <text x="500" y="300" font-size="13" fill="#1d1d1f">Type-B</text>
+      </g>
+
+      <!-- hint callouts -->
+      <text x="20" y="40" font-size="12" font-style="italic" fill="#86868b">short semantic on type</text>
+      <line x1="80" y1="48" x2="110" y2="98" stroke="#86868b" stroke-width="0.8"/>
+
+      <text x="260" y="70" font-size="12" font-style="italic" fill="#86868b">short semantic on mapping</text>
+      <line x1="310" y1="78" x2="240" y2="118" stroke="#86868b" stroke-width="0.8"/>
+
+      <text x="160" y="280" font-size="12" font-style="italic" fill="#86868b">long semantic on type</text>
+      <line x1="260" y1="285" x2="480" y2="285" stroke="#86868b" stroke-width="0.8"/>
+    </svg>
+  </div>
+  <div class="caption">
+    便签与 Type-B 之间用 <b>虚线</b> 连接；连接点在 Type-B 边缘（就近侧），便签侧选其顶边/左边靠近的中点。
+    移动 Type-B 或便签时，虚线端点自动重算；移动 Type-B 时便签本身的坐标<b>不</b>随动（便签保持绝对位置，仅连线跟随）。
+  </div>
+</div>
+
+<div class="grid" style="margin-top: 18px;">
+  <div class="frame">
+    <h3>创建流程 · 两种路径</h3>
+    <ol style="padding-left: 18px; font-size: 13px; line-height: 1.7;">
+      <li><b>路径 A · 先空便签后附着</b>：左侧选 <i>Long Semantic</i> → 画布空白处点击 → 生成未附着便签（连接线 = 无）→ 拖到 Type / Relation 附近自动吸附；或右侧面板里手动选择附着目标。</li>
+      <li><b>路径 B · 直接附着创建</b>：左侧选 <i>Long Semantic</i> → 点击 Type 或 Relation → 便签默认出现在目标下方 24px 处，连接线立即建立。</li>
+    </ol>
+  </div>
+  <div class="frame">
+    <h3>交互细节</h3>
+    <ul style="padding-left: 18px; font-size: 13px; line-height: 1.7;">
+      <li>选中便签后：<b>双击便签正文</b>进入行内编辑；<b>Enter</b> 换行，<b>Esc</b> 退出；失焦自动保存。</li>
+      <li>标题类型在右侧 Inspector 下拉切换，便签标题颜色与文字实时更新。</li>
+      <li>删除便签不影响其附着对象；删除 Type / Relation 时，附着在其上的便签改为「未附着」状态（保留在画布上）。</li>
+      <li>拖拽便签到另一个 Type / Relation 附近时，显示高亮轮廓预览目标；松开后切换附着。</li>
+      <li>撤销/重做覆盖：创建、删除、改标题、改正文、改附着、移动位置。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- =============================== §5 =============================== -->
+<h2>§5 数据模型 & Schema</h2>
+<div class="frame">
+  <pre style="font-size: 12px; line-height: 1.55; white-space: pre-wrap;">// src/models/diagram.ts
+export type LongSemanticHeading = 'constraint' | 'derivation' | 'note';
+
+export interface LongSemanticElement {
+  id: ElementId;                       // "note-xxxx"
+  type: 'longSemantic';
+  heading: LongSemanticHeading;
+  body: string;                        // 多行纯文本
+  /** 附着目标；undefined = 未附着，自由摆放 */
+  attachedTo?: ElementId;              // Type 或 Relation 的 id
+  layout: Layout;                      // 绝对坐标 + 尺寸
+}
+
+export type DiagramElement =
+  | TypeElement | RelationElement | GeneralizationElement
+  | LongSemanticElement;
+</pre>
+  <div class="caption">
+    Schema v1.2 新增 <code>longSemantic</code> 元素类型；<code>heading</code> 为枚举；<code>attachedTo</code> 为可选引用；<code>layout</code> 同 Type 的绝对矩形。
+    连接线是视觉派生，<b>不</b>作为独立元素保存。
+  </div>
+</div>
+
+<!-- =============================== §6 =============================== -->
+<h2>§6 决策点汇总</h2>
+<div class="info-box">
+  <ol style="padding-left: 18px; line-height: 1.9;">
+    <li><b>折角方向</b>：统一右上角折起（与样图一致），不做用户可配置。</li>
+    <li><b>颜色方案</b>：底色 <code>#fffbe6</code> 统一；标题文字按 heading 区分（琥珀 / 蓝 / 灰）。</li>
+    <li><b>编辑方式</b>：双击便签正文进入行内编辑 + 右侧面板 textarea 同步；右侧面板是主编辑入口，行内编辑是快捷方式。</li>
+    <li><b>附着目标删除</b>：便签降级为「未附着」，而非级联删除。</li>
+    <li><b>拖动 Type 时便签联动</b>：<b>不</b>联动（便签保持绝对坐标，只有虚线重算）。这是否符合预期？</li>
+    <li><b>便签初始尺寸</b>：220 × 100，内容超出自动增高，最大高度 400 后出现内部滚动（或强制换行）。</li>
+    <li><b>Derivation 只能附于 Relation 吗</b>？PRD 说「派生映射」。建议第一阶段允许 Derivation 附于任意 Relation（不检查 isDerived），只在 hint 中提示；硬校验留到后续 <code>isDerived</code> 规则完善时再加。</li>
+  </ol>
+</div>
+
+<h2>§7 验收清单对应</h2>
+<table>
+  <tr><th>Story</th><th>本原型覆盖位置</th></tr>
+  <tr><td>ME-035 左侧工具栏入口</td><td>§1</td></tr>
+  <tr><td>ME-036 折角便签 · 标题 · 正文</td><td>§2 + §4 画布还原</td></tr>
+  <tr><td>ME-037 标题类型（Constraint/Derivation/Note）+ 颜色区分</td><td>§2 + §3</td></tr>
+  <tr><td>ME-038 附着 Type / Relation + 虚线连接</td><td>§4</td></tr>
+</table>
+
+</body>
+</html>

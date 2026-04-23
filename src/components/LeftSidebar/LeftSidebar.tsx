@@ -107,6 +107,26 @@ const TOOLS: ToolDef[] = [
       </svg>
     ),
   },
+  {
+    id: 'longSemantic',
+    label: 'Long Semantic',
+    tooltip: '添加长语义陈述便签',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        {/* folded-corner sticky note */}
+        <path
+          d="M4 4 H16 L20 8 V20 H4 Z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          fill="none"
+          strokeLinejoin="round"
+        />
+        <path d="M16 4 V8 H20" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+        <line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" strokeWidth="1" />
+        <line x1="7" y1="15.5" x2="17" y2="15.5" stroke="currentColor" strokeWidth="1" />
+      </svg>
+    ),
+  },
 ];
 
 export function LeftSidebar() {

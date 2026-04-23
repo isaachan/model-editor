@@ -3,4 +3,5 @@ export type ToolMode =
   | 'type'
   | 'relation'
   | 'generalization'
-  | 'shortSemantic';
+  | 'shortSemantic'
+  | 'longSemantic';
