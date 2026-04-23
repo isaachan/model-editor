@@ -58,6 +58,19 @@ interface DiagramState {
   deleteElement: (id: string) => void;
   deleteElements: (ids: string[]) => void;
   clearAll: () => void;
+
+  /**
+   * Bulk-replace persistent state. Used by file-load and undo/redo.
+   * Does NOT bump updatedAt — caller supplies metadata as-is.
+   */
+  replaceContent: (content: {
+    version: string;
+    metadata: DiagramMetadata;
+    elements: DiagramElement[];
+  }) => void;
+
+  /** Update just the diagram title (bumps updatedAt). */
+  setTitle: (title: string) => void;
 }
 
 const now = () => Date.now();
@@ -384,6 +397,16 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       elements: [],
       metadata: { ...s.metadata, updatedAt: now() },
     })),
+
+  replaceContent: (content) =>
+    set(() => ({
+      version: content.version,
+      metadata: { ...content.metadata },
+      elements: content.elements,
+    })),
+
+  setTitle: (title) =>
+    set((s) => ({ metadata: { ...s.metadata, title, updatedAt: now() } })),
 }));
 
 /**

@@ -375,7 +375,11 @@ const STORAGE_KEY = 'model-editor-current';
 - [ ] ME-012 ~ ME-018: 关系线 + 基数符号
 - [ ] ME-019: 删除元素
 - [ ] ME-024 ~ ME-025: 撤销/重做
-- [ ] ME-027: localStorage 自动保存
+- [x] ME-026: 创建新图表文件（顶部工具栏 New 按钮 + 文件下拉的 "+ New Diagram"）
+- [x] ME-027: localStorage 多图表自动保存（keys: `model-editor:files:index` / `model-editor:files:<id>` / `model-editor:session:currentFileId`；debounce 800ms；配额错误在状态栏显示）
+- [x] ME-044: 历史栈框架（useHistoryStore：past/future/push/undo/redo/canUndo/canRedo，上限 100；subscribe + 400ms debounce 收敛连续拖拽；isApplyingHistory 屏蔽 file-load 触发的 push）
+- [x] ME-047: 图表切换下拉（Toolbar 右侧按 updatedAt 倒序，新建入口，高亮当前）
+- [x] ME-048: 重命名/删除（标题双击改名，列表项 ✕ 按钮 + confirm；删除当前自动切换；列表为空时自动新建）
 
 ### P2 - 完整 Fowler 符号
 - [x] ME-028 ~ ME-031: 泛化划分容器（GeneralizationBox：自动收缩/扩展到包含子 Type；容器本身含父连接线；完整=单底边，不完整=底部内侧增补一条水平线；删除容器时子 Type 释放为自由 Type，删除父 Type 时级联删除其容器）

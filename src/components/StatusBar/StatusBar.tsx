@@ -1,11 +1,13 @@
 import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useFilesStore } from '@/store/useFilesStore';
 
 export function StatusBar() {
   const elementCount = useDiagramStore((s) => s.elements.length);
   const selectedCount = useEditorStore((s) => s.selectedIds.length);
   const tool = useEditorStore((s) => s.currentTool);
   const scale = useEditorStore((s) => s.viewport.scale);
+  const storageError = useFilesStore((s) => s.storageError);
 
   return (
     <footer
@@ -19,6 +21,11 @@ export function StatusBar() {
       <span>Elements: {elementCount}</span>
       <span>Selected: {selectedCount}</span>
       <span>Zoom: {Math.round(scale * 100)}%</span>
+      {storageError && (
+        <span style={{ color: '#d70015' }} title={storageError}>
+          Save failed: storage quota reached
+        </span>
+      )}
       <span className="ml-auto capitalize">Tool: {tool}</span>
     </footer>
   );

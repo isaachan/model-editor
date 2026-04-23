@@ -3,8 +3,10 @@ import { LeftSidebar } from './components/LeftSidebar/LeftSidebar';
 import { Canvas } from './components/Canvas/Canvas';
 import { RightSidebar } from './components/RightSidebar/RightSidebar';
 import { StatusBar } from './components/StatusBar/StatusBar';
+import { useBootstrap } from './hooks/useBootstrap';
 
 export default function App() {
+  useBootstrap();
   return (
     <div className="flex h-full w-full flex-col">
       <Toolbar />
