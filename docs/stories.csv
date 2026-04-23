@@ -30,9 +30,9 @@ ME-028,Done,As a 建模者，我 want 在左侧工具栏看到泛化容器工具
 ME-029,Done,As a 建模者，我 want 创建泛化划分容器框，so that 我可以表达父类和子类的分类关系,High,Business Story,可以创建泛化容器框并连接到父Type,- 选中泛化容器工具后在画布点击创建容器框/n- 容器框显示为矩形/n- 可以将容器框连接到一个父Type节点/n- 连接线从父Type指向容器框
 ME-030,Done,As a 建模者，我 want 在泛化容器内创建子Type，so that 我可以表示分类中的子类型,High,Business Story,容器框内部可以包含多个子Type节点,- 可以在泛化容器框内部创建Type节点/n- 子Type节点视觉上位于容器框内部/n- 移动容器框时内部的子Type一起移动
 ME-031,Done,As a 建模者，我 want 设置泛化划分的类型完整/不完整，so that 我可以表达划分的性质,High,Business Story,支持两种划分类型的视觉区分,- 选中泛化容器后右侧属性面板显示划分类型选项/n- 完整划分显示为容器底部单水平线（即容器矩形自身的下边）/n- 不完整划分显示为容器底部双水平线（多出的那根线画在容器内侧）/n- 默认创建的是完整划分
-ME-032,Backlog,As a 建模者，我 want 在左侧工具栏看到短语义工具选项，so that 我可以选择它来添加短语义标记,High,Business Story,左侧工具栏显示短语义工具,- 左侧工具栏显示"短语义"图标或按钮/n- 鼠标悬停有tooltip显示"添加短语义陈述标记"/n- 点击按钮后进入短语义创建模式
-ME-033,Backlog,As a 建模者，我 want 为Type节点添加短语义陈述，so that 我可以为类型附加简短约束标记,High,Business Story,短语义显示在Type框顶部,- 选中短语义工具后点击Type节点即可添加/n- 短语义标记使用方括号包裹显示在Type框顶部/n- 支持选择预定义的标记类型abstract/immutable/singleton等
-ME-034,Backlog,As a 建模者，我 want 为关系线添加短语义陈述，so that 我可以为关系附加简短约束标记,High,Business Story,短语义显示在关系线旁,- 选中短语义工具后点击关系线即可添加/n- 短语义标记使用方括号包裹显示在关系线旁/n- 支持选择预定义的标记类型list/class/key/hierarchy等
+ME-032,Done,As a 建模者，我 want 在左侧工具栏看到短语义工具选项，so that 我可以选择它来添加短语义标记,High,Business Story,左侧工具栏显示短语义工具,- 左侧工具栏显示"短语义"图标或按钮/n- 鼠标悬停有tooltip显示"添加短语义陈述标记"/n- 点击按钮后进入短语义创建模式
+ME-033,Done,As a 建模者，我 want 为Type节点添加短语义陈述，so that 我可以为类型附加简短约束标记,High,Business Story,短语义显示在Type框顶部,- 选中短语义工具后点击Type节点即可添加/n- 短语义标记使用方括号包裹显示在Type框顶部/n- 支持选择预定义的标记类型abstract/immutable/singleton等
+ME-034,Done,As a 建模者，我 want 为关系线添加短语义陈述，so that 我可以为关系附加简短约束标记,High,Business Story,短语义显示在关系线旁,- 选中短语义工具后点击关系线即可添加/n- 短语义标记使用方括号包裹显示在关系线旁/n- 支持选择预定义的标记类型list/class/key/hierarchy等
 ME-035,Backlog,As a 建模者，我 want 在左侧工具栏看到长语义便签工具选项，so that 我可以选择它来添加详细的业务规则说明,High,Business Story,左侧工具栏显示长语义便签工具,- 左侧工具栏显示"长语义"图标或按钮/n- 鼠标悬停有tooltip显示"添加长语义陈述便签"/n- 点击按钮后进入长语义便签创建模式
 ME-036,Backlog,As a 建模者，我 want 在画布上创建长语义陈述便签，so that 我可以详细描述复杂的业务规则,High,Business Story,便签显示为折角矩形样式,- 选中长语义工具后在画布任意位置点击创建便签/n- 便签显示为右上角折起的矩形样式/n- 便签顶部显示标题，内容区域可输入多行文本
 ME-037,Backlog,As a 建模者，我 want 选择长语义便签的标题类型，so that 我可以按分类组织不同类型的语义陈述,High,Business Story,第一阶段支持3种标题类型；Instances/Method/Overload 待 Type 扩展属性和操作后再加入,- 选中便签后右侧属性面板显示标题类型下拉选项/n- 第一阶段支持选择的标题类型包括：Constraint, Derivation, Note/n- 标题显示在便签顶部加粗/n- 不同标题类型可使用不同颜色区分可选

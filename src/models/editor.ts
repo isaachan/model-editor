@@ -1,1 +1,6 @@
-export type ToolMode = 'select' | 'type' | 'relation' | 'generalization';
+export type ToolMode =
+  | 'select'
+  | 'type'
+  | 'relation'
+  | 'generalization'
+  | 'shortSemantic';

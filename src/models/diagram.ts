@@ -37,6 +37,8 @@ export interface RelationEnd {
   cardinality: CardinalityKind;
   /** Parameter tuple for cardinality kinds that need user input. */
   cardinalityRange?: [number, number | null];
+  /** Short semantic markers scoped to this mapping (this end of the relation). */
+  semantics?: ShortSemantic[];
 }
 
 export interface RelationElement {
@@ -45,7 +47,12 @@ export interface RelationElement {
   source: RelationEnd;
   target: RelationEnd;
   isDerived?: boolean;
-  semantics?: ShortSemantic[];
+  /**
+   * Short semantic markers scoped to the association itself (e.g. hierarchy,
+   * dag). Rendered at the line's midpoint. Distinct from RelationEnd.semantics,
+   * which is per-mapping and rendered near the matching cardinality marker.
+   */
+  associationSemantics?: ShortSemantic[];
 }
 
 /** Discriminated union matching schema v1.1 shortSemantic. */

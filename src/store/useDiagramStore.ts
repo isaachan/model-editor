@@ -8,6 +8,7 @@ import type {
   Layout,
   PartitionCompleteness,
   RelationElement,
+  ShortSemantic,
   TypeElement,
 } from '@/models/diagram';
 import { isGeneralization, isType } from '@/models/diagram';
@@ -58,6 +59,27 @@ interface DiagramState {
   deleteElement: (id: string) => void;
   deleteElements: (ids: string[]) => void;
   clearAll: () => void;
+
+  /** Append a short-semantic marker to a Type's semantics. */
+  addTypeSemantic: (typeId: string, marker: ShortSemantic) => void;
+  /** Remove a marker from a Type by index. */
+  removeTypeSemantic: (typeId: string, index: number) => void;
+  /** Append a marker to one end (mapping) of a relation. */
+  addRelationMappingSemantic: (
+    relationId: string,
+    end: 'source' | 'target',
+    marker: ShortSemantic,
+  ) => void;
+  /** Remove a marker from one end of a relation by index. */
+  removeRelationMappingSemantic: (
+    relationId: string,
+    end: 'source' | 'target',
+    index: number,
+  ) => void;
+  /** Append a marker to the association (whole relation line). */
+  addRelationAssociationSemantic: (relationId: string, marker: ShortSemantic) => void;
+  /** Remove a marker from the association by index. */
+  removeRelationAssociationSemantic: (relationId: string, index: number) => void;
 
   /**
    * Bulk-replace persistent state. Used by file-load and undo/redo.
@@ -235,7 +257,6 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       source: { typeId: sourceTypeId, cardinality: 'exactly_one' },
       target: { typeId: targetTypeId, cardinality: 'exactly_one' },
       isDerived: false,
-      semantics: [],
     };
     set((s) => ({
       elements: [...s.elements, relation],
@@ -395,6 +416,79 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   clearAll: () =>
     set((s) => ({
       elements: [],
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  addTypeSemantic: (typeId, marker) =>
+    set((s) => ({
+      elements: s.elements.map((el) =>
+        el.id === typeId && el.type === 'type'
+          ? { ...el, semantics: [...(el.semantics ?? []), marker] }
+          : el,
+      ),
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  removeTypeSemantic: (typeId, index) =>
+    set((s) => ({
+      elements: s.elements.map((el) => {
+        if (el.id !== typeId || el.type !== 'type') return el;
+        const list = el.semantics ?? [];
+        if (index < 0 || index >= list.length) return el;
+        return { ...el, semantics: list.filter((_, i) => i !== index) };
+      }),
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  addRelationMappingSemantic: (relationId, end, marker) =>
+    set((s) => ({
+      elements: s.elements.map((el) => {
+        if (el.id !== relationId || el.type !== 'relation') return el;
+        const endEl = el[end];
+        return {
+          ...el,
+          [end]: { ...endEl, semantics: [...(endEl.semantics ?? []), marker] },
+        };
+      }),
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  removeRelationMappingSemantic: (relationId, end, index) =>
+    set((s) => ({
+      elements: s.elements.map((el) => {
+        if (el.id !== relationId || el.type !== 'relation') return el;
+        const endEl = el[end];
+        const list = endEl.semantics ?? [];
+        if (index < 0 || index >= list.length) return el;
+        return {
+          ...el,
+          [end]: { ...endEl, semantics: list.filter((_, i) => i !== index) },
+        };
+      }),
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  addRelationAssociationSemantic: (relationId, marker) =>
+    set((s) => ({
+      elements: s.elements.map((el) =>
+        el.id === relationId && el.type === 'relation'
+          ? {
+              ...el,
+              associationSemantics: [...(el.associationSemantics ?? []), marker],
+            }
+          : el,
+      ),
+      metadata: { ...s.metadata, updatedAt: now() },
+    })),
+
+  removeRelationAssociationSemantic: (relationId, index) =>
+    set((s) => ({
+      elements: s.elements.map((el) => {
+        if (el.id !== relationId || el.type !== 'relation') return el;
+        const list = el.associationSemantics ?? [];
+        if (index < 0 || index >= list.length) return el;
+        return { ...el, associationSemantics: list.filter((_, i) => i !== index) };
+      }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 

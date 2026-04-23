@@ -1,12 +1,22 @@
+import { useState } from 'react';
 import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
 import { CARDINALITY_OPTIONS } from '@/utils/cardinality';
+import {
+  SEMANTIC_CATALOG,
+  isMultivalued,
+  labelOf,
+  type SemanticCatalogEntry,
+  type SemanticScope,
+} from '@/constants/semantics';
 import type {
   CardinalityKind,
   GeneralizationElement,
   PartitionCompleteness,
   RelationElement,
   RelationEnd,
+  ShortSemantic,
+  TypeElement,
 } from '@/models/diagram';
 
 export function RightSidebar() {
@@ -16,6 +26,20 @@ export function RightSidebar() {
   const setCardinality = useDiagramStore((s) => s.setCardinality);
   const setGeneralizationCompleteness = useDiagramStore(
     (s) => s.setGeneralizationCompleteness,
+  );
+  const addTypeSemantic = useDiagramStore((s) => s.addTypeSemantic);
+  const removeTypeSemantic = useDiagramStore((s) => s.removeTypeSemantic);
+  const addRelationMappingSemantic = useDiagramStore(
+    (s) => s.addRelationMappingSemantic,
+  );
+  const removeRelationMappingSemantic = useDiagramStore(
+    (s) => s.removeRelationMappingSemantic,
+  );
+  const addRelationAssociationSemantic = useDiagramStore(
+    (s) => s.addRelationAssociationSemantic,
+  );
+  const removeRelationAssociationSemantic = useDiagramStore(
+    (s) => s.removeRelationAssociationSemantic,
   );
 
   const selected = selectedIds.length === 1
@@ -44,7 +68,10 @@ export function RightSidebar() {
             key={selected.id}
             id={selected.id}
             name={selected.name}
+            semantics={selected.semantics}
             onRename={(name) => renameType(selected.id, name)}
+            onAddSemantic={(m) => addTypeSemantic(selected.id, m)}
+            onRemoveSemantic={(i) => removeTypeSemantic(selected.id, i)}
           />
         )}
         {selected?.type === 'relation' && (
@@ -52,6 +79,18 @@ export function RightSidebar() {
             key={selected.id}
             relation={selected}
             onChange={(end, kind, range) => setCardinality(selected.id, end, kind, range)}
+            onAddMappingSemantic={(end, m) =>
+              addRelationMappingSemantic(selected.id, end, m)
+            }
+            onRemoveMappingSemantic={(end, i) =>
+              removeRelationMappingSemantic(selected.id, end, i)
+            }
+            onAddAssociationSemantic={(m) =>
+              addRelationAssociationSemantic(selected.id, m)
+            }
+            onRemoveAssociationSemantic={(i) =>
+              removeRelationAssociationSemantic(selected.id, i)
+            }
           />
         )}
         {selected?.type === 'generalization' && (
@@ -93,11 +132,17 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function TypeInspector({
   name,
+  semantics,
   onRename,
+  onAddSemantic,
+  onRemoveSemantic,
 }: {
   id: string;
   name: string;
+  semantics: TypeElement['semantics'];
   onRename: (name: string) => void;
+  onAddSemantic: (marker: ShortSemantic) => void;
+  onRemoveSemantic: (index: number) => void;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -122,6 +167,14 @@ function TypeInspector({
           autoFocus
         />
       </label>
+
+      <SemanticSlot
+        label="短语义 / Short Semantic"
+        scope="type"
+        markers={semantics}
+        onAdd={onAddSemantic}
+        onRemove={onRemoveSemantic}
+      />
     </div>
   );
 }
@@ -129,6 +182,10 @@ function TypeInspector({
 function RelationInspector({
   relation,
   onChange,
+  onAddMappingSemantic,
+  onRemoveMappingSemantic,
+  onAddAssociationSemantic,
+  onRemoveAssociationSemantic,
 }: {
   relation: RelationElement;
   onChange: (
@@ -136,21 +193,67 @@ function RelationInspector({
     kind: CardinalityKind,
     range?: [number, number | null],
   ) => void;
+  onAddMappingSemantic: (end: 'source' | 'target', marker: ShortSemantic) => void;
+  onRemoveMappingSemantic: (end: 'source' | 'target', index: number) => void;
+  onAddAssociationSemantic: (marker: ShortSemantic) => void;
+  onRemoveAssociationSemantic: (index: number) => void;
 }) {
+  const isRecursive = relation.source.typeId === relation.target.typeId;
   return (
     <div className="flex flex-col gap-4">
       <SectionLabel>Relation</SectionLabel>
 
-      <CardinalityField
-        label="Source 基数"
-        endState={relation.source}
-        onChange={(k, range) => onChange('source', k, range)}
-      />
-      <CardinalityField
-        label="Target 基数"
-        endState={relation.target}
-        onChange={(k, range) => onChange('target', k, range)}
-      />
+      <div className="flex flex-col gap-3 rounded-[10px] border p-3" style={{ borderColor: 'var(--color-separator)' }}>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.3px]" style={{ color: 'var(--color-text-secondary)' }}>
+          Source 端
+        </div>
+        <CardinalityField
+          label="基数"
+          endState={relation.source}
+          onChange={(k, range) => onChange('source', k, range)}
+        />
+        <SemanticSlot
+          label="短语义 (mapping)"
+          scope="mapping"
+          markers={relation.source.semantics}
+          multivalued={isMultivalued(relation.source.cardinality)}
+          onAdd={(m) => onAddMappingSemantic('source', m)}
+          onRemove={(i) => onRemoveMappingSemantic('source', i)}
+        />
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-[10px] border p-3" style={{ borderColor: 'var(--color-separator)' }}>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.3px]" style={{ color: 'var(--color-text-secondary)' }}>
+          Target 端
+        </div>
+        <CardinalityField
+          label="基数"
+          endState={relation.target}
+          onChange={(k, range) => onChange('target', k, range)}
+        />
+        <SemanticSlot
+          label="短语义 (mapping)"
+          scope="mapping"
+          markers={relation.target.semantics}
+          multivalued={isMultivalued(relation.target.cardinality)}
+          onAdd={(m) => onAddMappingSemantic('target', m)}
+          onRemove={(i) => onRemoveMappingSemantic('target', i)}
+        />
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-[10px] border p-3" style={{ borderColor: 'var(--color-separator)' }}>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.3px]" style={{ color: 'var(--color-text-secondary)' }}>
+          Association
+        </div>
+        <SemanticSlot
+          label="短语义 (association)"
+          scope="association"
+          markers={relation.associationSemantics}
+          recursive={isRecursive}
+          onAdd={onAddAssociationSemantic}
+          onRemove={onRemoveAssociationSemantic}
+        />
+      </div>
     </div>
   );
 }
@@ -344,6 +447,174 @@ function GeneralizationInspector({
       <div className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
         子类数量：{element.childTypeIds.length}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Inline pill list + "+ Add" picker for short-semantic markers.
+ * Filters the catalog by scope, plus optional multivalued/recursive constraints.
+ * For `key`, prompts for the keyType inline; duplicates of the same kind are
+ * prevented (key can still be updated by removing + re-adding).
+ */
+function SemanticSlot({
+  label,
+  scope,
+  markers,
+  multivalued,
+  recursive,
+  onAdd,
+  onRemove,
+}: {
+  label: string;
+  scope: SemanticScope;
+  markers: ShortSemantic[] | undefined;
+  multivalued?: boolean;
+  recursive?: boolean;
+  onAdd: (marker: ShortSemantic) => void;
+  onRemove: (index: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pendingKeyEntry, setPendingKeyEntry] = useState<SemanticCatalogEntry | null>(null);
+  const [keyInput, setKeyInput] = useState('');
+  const list = markers ?? [];
+  const existingKinds = new Set(list.map((m) => m.kind));
+
+  const available = SEMANTIC_CATALOG.filter((e) => {
+    if (!e.scopes.includes(scope)) return false;
+    if (e.requiresMultivalued && !multivalued) return false;
+    if (e.requiresRecursive && !recursive) return false;
+    if (existingKinds.has(e.kind)) return false;
+    return true;
+  });
+
+  const handlePick = (entry: SemanticCatalogEntry) => {
+    if (entry.needsParam) {
+      setPendingKeyEntry(entry);
+      setKeyInput('');
+      return;
+    }
+    onAdd({ kind: entry.kind } as ShortSemantic);
+    setOpen(false);
+  };
+
+  const commitKey = () => {
+    const trimmed = keyInput.trim();
+    if (!trimmed || !pendingKeyEntry) {
+      setPendingKeyEntry(null);
+      return;
+    }
+    onAdd({ kind: 'key', keyType: trimmed });
+    setPendingKeyEntry(null);
+    setOpen(false);
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {list.map((m, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]"
+            style={{
+              borderColor: 'var(--color-separator)',
+              background: '#fff',
+              color: 'var(--color-text-primary)',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            }}
+          >
+            [{labelOf(m)}]
+            <button
+              type="button"
+              onClick={() => onRemove(i)}
+              aria-label="移除标记"
+              className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-[11px] leading-none hover:bg-black/5"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        {available.length > 0 && !open && (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center rounded-full border border-dashed px-2 py-0.5 text-[11px] transition-colors hover:bg-black/5"
+            style={{
+              borderColor: 'var(--color-separator)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            + Add
+          </button>
+        )}
+      </div>
+      {open && (
+        <div
+          className="flex flex-col gap-1 rounded-[8px] border p-2"
+          style={{ borderColor: 'var(--color-separator)', background: '#fafafa' }}
+        >
+          {pendingKeyEntry ? (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+                key 的类型参数（例如 CustomerId）
+              </span>
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitKey();
+                    else if (e.key === 'Escape') setPendingKeyEntry(null);
+                  }}
+                  className="flex-1 rounded-[6px] border px-2 py-1 text-xs outline-none"
+                  style={{ borderColor: 'var(--color-separator)', background: '#fff' }}
+                />
+                <button
+                  type="button"
+                  onClick={commitKey}
+                  className="rounded-[6px] px-2 py-1 text-xs text-white"
+                  style={{ background: 'var(--color-accent-blue)' }}
+                >
+                  确定
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {available.map((e) => (
+                <button
+                  key={e.kind}
+                  type="button"
+                  onClick={() => handlePick(e)}
+                  className="rounded-[6px] px-2 py-1 text-left text-xs transition-colors hover:bg-black/5"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  [{e.label}]
+                  {e.needsParam && (
+                    <span className="ml-1 text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>
+                      需参数
+                    </span>
+                  )}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="mt-1 text-[11px]"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                取消
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

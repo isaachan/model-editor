@@ -477,7 +477,10 @@ export function Canvas() {
       ? 'grabbing'
       : spacePressed
         ? 'grab'
-        : currentTool === 'type' || currentTool === 'relation' || currentTool === 'generalization'
+        : currentTool === 'type' ||
+            currentTool === 'relation' ||
+            currentTool === 'generalization' ||
+            currentTool === 'shortSemantic'
           ? 'crosshair'
           : 'default';
   const typesDraggable = currentTool === 'select' && !spacePressed && !panSession;
@@ -547,6 +550,7 @@ export function Canvas() {
                     hovered={hoveredId === relation.id}
                     onSelect={() => {
                       if (currentTool === 'select') select(relation.id);
+                      else if (currentTool === 'shortSemantic') select(relation.id);
                     }}
                     onHoverChange={(h) => setHovered(h ? relation.id : null)}
                   />

@@ -1,6 +1,7 @@
 import { Group, Rect, Text } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { TYPE_NODE } from '@/constants/defaults';
+import { renderBrackets } from '@/constants/semantics';
 import type { TypeElement } from '@/models/diagram';
 
 interface TypeNodeProps {
@@ -120,6 +121,19 @@ export function TypeNode({
         fill={TYPE_NODE.stroke}
         listening={false}
       />
+      {element.semantics && element.semantics.length > 0 && (
+        <Text
+          text={renderBrackets(element.semantics)}
+          x={-80}
+          y={-18}
+          width={layout.width + 160}
+          align="center"
+          fontFamily={TYPE_NODE.fontFamily}
+          fontSize={11}
+          fill="#515154"
+          listening={false}
+        />
+      )}
     </Group>
   );
 }

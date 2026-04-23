@@ -87,6 +87,26 @@ const TOOLS: ToolDef[] = [
       </svg>
     ),
   },
+  {
+    id: 'shortSemantic',
+    label: 'Short Semantic',
+    tooltip: '添加短语义陈述标记',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <text
+          x="12"
+          y="17"
+          textAnchor="middle"
+          fontSize="17"
+          fontWeight="500"
+          fill="currentColor"
+          fontFamily="-apple-system, 'SF Mono', Menlo, monospace"
+        >
+          [ ]
+        </text>
+      </svg>
+    ),
+  },
 ];
 
 export function LeftSidebar() {

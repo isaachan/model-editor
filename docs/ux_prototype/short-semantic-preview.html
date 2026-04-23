@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Short Semantic Prototype — ME-032 ~ ME-034</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    padding: 40px;
+    line-height: 1.55;
+  }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 32px 0 10px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: #1d1d1f; }
+  .subtitle { font-size: 13px; color: #86868b; margin-bottom: 6px; }
+  .story-tag {
+    display: inline-block;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 6px;
+    background: #007aff;
+  }
+  .story-tag.q { background: #ff9500; }
+  .story-tag.na { background: #86868b; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .frame {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+  }
+  .frame .caption { font-size: 12px; color: #515154; margin-top: 10px; }
+  .canvas {
+    background: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
+    background-size: 20px 20px;
+    border-radius: 10px;
+    border: 1px solid #e5e5ea;
+    height: 260px;
+  }
+  .canvas.short { height: 180px; }
+  .canvas.tall { height: 360px; }
+  svg { width: 100%; height: 100%; }
+
+  .note-box {
+    background: #fff8e5;
+    border: 1px solid #f2d37a;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    font-size: 13px;
+  }
+  .note-box ol, .note-box ul { padding-left: 20px; }
+  .note-box li { margin: 6px 0; }
+
+  .decision-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+    margin-top: 10px;
+  }
+  .decision-table th, .decision-table td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e5ea;
+    vertical-align: top;
+  }
+  .decision-table th {
+    background: #fafafa;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: #515154;
+  }
+  .decision-table tr:last-child td { border-bottom: none; }
+  code { font-family: 'SF Mono', Menlo, monospace; background: #f2f2f7; padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
+
+  /* UI mockups */
+  .ui-mock {
+    background: #ffffff;
+    border: 1px solid #e5e5ea;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 12.5px;
+  }
+  .ui-mock .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .ui-mock .label { color: #86868b; width: 72px; flex: none; font-size: 11.5px; }
+  .ui-mock .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #f2f2f7; border: 1px solid #d2d2d7;
+    padding: 2px 8px 2px 10px; border-radius: 999px; font-size: 11.5px;
+    color: #1d1d1f;
+  }
+  .ui-mock .pill .x { color: #86868b; cursor: pointer; font-size: 14px; margin-left: 2px; }
+  .ui-mock .pill.add { background: transparent; border-style: dashed; color: #007aff; cursor: pointer; }
+  .ui-mock select { font-size: 12.5px; padding: 3px 6px; border: 1px solid #d2d2d7; border-radius: 6px; background: #fff; }
+  .ui-mock input[type=text] { font-size: 12.5px; padding: 3px 6px; border: 1px solid #d2d2d7; border-radius: 6px; width: 90px; }
+
+  .sidebar-tool {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .sidebar-tool.active { border-color: #007aff; background: rgba(0,122,255,0.08); }
+  .sidebar-tool .icon {
+    width: 28px; height: 28px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #1d1d1f; border-radius: 6px;
+    background: #fff; font-size: 11px; font-weight: 600;
+  }
+  .sidebar-tool .icon.brackets {
+    border: none; background: transparent; color: #1d1d1f; font-size: 20px; font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<h1>Short Semantic Prototype <span class="story-tag">ME-032</span><span class="story-tag">ME-033</span><span class="story-tag">ME-034</span></h1>
+<div class="subtitle">Short Semantic Statements — marker pill attached to Types and Relations. Draft for review.</div>
+
+<h2>0. 交互模型（和泛化一致）</h2>
+<div class="frame" style="margin-bottom: 14px;">
+  <div style="font-size: 13px; color: #515154;">
+    Phase 1 先做“选中元素 → 在右侧属性面板里增/删/改 marker”。左侧工具栏的“短语义工具”按钮只作为 <strong>入口提示</strong>，
+    点击后进入一个“点谁就给谁加 marker”的快速模式（类似关系线工具）。默认走属性面板路径更高频。
+  </div>
+</div>
+
+<h2>1. 左侧工具栏入口（ME-032）</h2>
+<div class="grid">
+  <div class="frame">
+    <h3>Option A — 工具栏按钮 + 右键菜单入口</h3>
+    <div class="ui-mock" style="max-width: 220px;">
+      <div class="sidebar-tool"><div class="icon">T</div>Type</div>
+      <div class="sidebar-tool"><div class="icon">⟷</div>Relation</div>
+      <div class="sidebar-tool"><div class="icon">▢</div>Generalization</div>
+      <div class="sidebar-tool active"><div class="icon brackets">[ ]</div>Short Semantic</div>
+    </div>
+    <div class="caption">选中后鼠标在 Type 或 Relation 上变成 “+”；点击弹出 picker，选完自动退出模式。</div>
+  </div>
+  <div class="frame">
+    <h3>Option B — 仅在属性面板里增删</h3>
+    <div class="ui-mock" style="max-width: 220px;">
+      <div class="sidebar-tool"><div class="icon">T</div>Type</div>
+      <div class="sidebar-tool"><div class="icon">⟷</div>Relation</div>
+      <div class="sidebar-tool"><div class="icon">▢</div>Generalization</div>
+      <div style="color:#86868b; font-size:12px; padding-left:4px; margin-top: 6px;">（无独立按钮）</div>
+    </div>
+    <div class="caption">左侧栏不放按钮，只在右侧属性面板提供 “+ Add marker” 入口，交互更集中。Story ME-032 仍需有一个可点击的“短语义工具”，这里设计为右侧面板的 Add 按钮。</div>
+  </div>
+</div>
+<div class="note-box">
+  <strong>⚠️ 决策点 1</strong> <span class="story-tag q">需确认</span>：
+  左侧栏是否有独立工具？我的建议是 <strong>Option A</strong>：story 原文说“左侧工具栏看到短语义工具选项”，走 A 更贴近 story 描述，也和 Type/Relation/Generalization 并列一致。
+</div>
+
+<h2>2. Type 上显示短语义（ME-033）</h2>
+<div class="grid">
+  <div class="frame">
+    <h3>无 marker — 基线</h3>
+    <div class="canvas short">
+      <svg viewBox="0 0 400 160">
+        <!-- Type box -->
+        <rect x="140" y="55" width="120" height="48" rx="2" fill="#ffffff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="200" y="85" text-anchor="middle" font-size="14" fill="#1d1d1f" font-family="-apple-system">Account</text>
+      </svg>
+    </div>
+    <div class="caption">Type 无 marker 时不占用额外高度。</div>
+  </div>
+  <div class="frame">
+    <h3>1 个 marker — 顶部一行</h3>
+    <div class="canvas short">
+      <svg viewBox="0 0 400 160">
+        <text x="200" y="44" text-anchor="middle" font-size="11" fill="#515154" font-family="-apple-system">[abstract]</text>
+        <rect x="140" y="55" width="120" height="48" rx="2" fill="#ffffff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="200" y="85" text-anchor="middle" font-size="14" fill="#1d1d1f" font-family="-apple-system">Account</text>
+      </svg>
+    </div>
+    <div class="caption">marker 居中，方括号样式，字号 11px，灰色 <code>#515154</code>。位于矩形顶部外侧 ~11px。</div>
+  </div>
+
+  <div class="frame">
+    <h3>多个 marker — 一行空格分隔</h3>
+    <div class="canvas short">
+      <svg viewBox="0 0 400 160">
+        <text x="200" y="44" text-anchor="middle" font-size="11" fill="#515154" font-family="-apple-system">[abstract] [immutable]</text>
+        <rect x="140" y="55" width="120" height="48" rx="2" fill="#ffffff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="200" y="85" text-anchor="middle" font-size="14" fill="#1d1d1f" font-family="-apple-system">Customer</text>
+      </svg>
+    </div>
+    <div class="caption">多个 marker 用空格连写成一行；超宽时延长文本宽度（不换行，Fowler 书里也是一行）。</div>
+  </div>
+  <div class="frame">
+    <h3>带参数 marker</h3>
+    <div class="canvas short">
+      <svg viewBox="0 0 400 160">
+        <text x="200" y="44" text-anchor="middle" font-size="11" fill="#515154" font-family="-apple-system">[singleton] [key: CustomerId]</text>
+        <rect x="140" y="55" width="120" height="48" rx="2" fill="#ffffff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="200" y="85" text-anchor="middle" font-size="14" fill="#1d1d1f" font-family="-apple-system">Customer</text>
+      </svg>
+    </div>
+    <div class="caption">带参数的写法按 schema 渲染：<code>[key: &lt;type&gt;]</code>、<code>[n1, n2]</code>。</div>
+  </div>
+</div>
+
+<h2>3. Relation 上显示短语义（ME-034）</h2>
+<div class="note-box" style="margin-top: 0;">
+  <strong>关键区分</strong>：一个 Relation = 两个方向相反的 <em>映射</em>。按 PRD：
+  <ul>
+    <li><strong>附于映射</strong>（e.g. <code>list</code>、<code>class</code>、<code>key</code>、<code>historic</code>、<code>abstract</code>、<code>immutable</code>）→ 视觉上
+      <strong>靠近该方向的基数标识</strong>，有 source / target 两个槽位。</li>
+    <li><strong>附于（递归）关联</strong>（e.g. <code>hierarchy</code>、<code>dag</code>、<code>multiple_hierarchies</code>）→ 放在
+      <strong>关系线中点</strong>，整条线只有一个。</li>
+    <li>对"附于递归关联/映射"的标记（如 <code>dag</code>），统一按"附于关联"处理，放中点。</li>
+    <li><code>hierarchy</code> 在 PRD 中有双重用法（递归关联=整条；多值映射=一端）。Phase 1 先按"整条关联"处理，避免两个语义槽位冲突；后续视反馈再加。</li>
+  </ul>
+</div>
+<div class="grid">
+  <div class="frame">
+    <h3>附于映射 — 靠近基数（推荐）</h3>
+    <div class="canvas">
+      <svg viewBox="0 0 500 220">
+        <rect x="40" y="80" width="110" height="44" rx="2" fill="#fff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="95" y="108" text-anchor="middle" font-size="14">Customer</text>
+        <rect x="350" y="80" width="110" height="44" rx="2" fill="#fff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="405" y="108" text-anchor="middle" font-size="14">Order</text>
+        <path d="M 150 102 L 350 102" stroke="#1d1d1f" stroke-width="1.5" fill="none"/>
+        <!-- source end: cardinality + marker stack -->
+        <text x="165" y="96" font-size="11" fill="#515154">[1,1]</text>
+        <text x="165" y="120" font-size="11" fill="#515154" font-style="italic">[class]</text>
+        <!-- target end: cardinality + marker stack -->
+        <text x="335" y="96" font-size="11" fill="#515154" text-anchor="end">[0,*]</text>
+        <text x="335" y="120" font-size="11" fill="#515154" text-anchor="end" font-style="italic">[list] [immutable]</text>
+      </svg>
+    </div>
+    <div class="caption">每端独立：基数在上，映射 marker 在下。两侧 marker 互不影响。</div>
+  </div>
+  <div class="frame">
+    <h3>附于关联 — 整条线中点</h3>
+    <div class="canvas">
+      <svg viewBox="0 0 500 220">
+        <rect x="210" y="20" width="110" height="44" rx="2" fill="#fff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="265" y="48" text-anchor="middle" font-size="14">Folder</text>
+        <rect x="210" y="150" width="110" height="44" rx="2" fill="#fff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="265" y="178" text-anchor="middle" font-size="14">Folder</text>
+        <path d="M 265 64 L 265 150" stroke="#1d1d1f" stroke-width="1.5" fill="none"/>
+        <text x="280" y="74" font-size="11" fill="#515154">[1,1]</text>
+        <text x="280" y="146" font-size="11" fill="#515154">[0,*]</text>
+        <!-- association-level marker at midpoint -->
+        <text x="280" y="112" font-size="11" fill="#515154" font-family="-apple-system">[hierarchy]</text>
+      </svg>
+    </div>
+    <div class="caption">递归关联的 <code>[hierarchy]</code> 放中点；基数仍贴两端。</div>
+  </div>
+  <div class="frame" style="grid-column: 1 / -1;">
+    <h3>混合：两端映射 marker + 中点关联 marker</h3>
+    <div class="canvas short">
+      <svg viewBox="0 0 500 160">
+        <rect x="40" y="60" width="110" height="44" rx="2" fill="#fff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="95" y="88" text-anchor="middle" font-size="14">Node</text>
+        <rect x="350" y="60" width="110" height="44" rx="2" fill="#fff" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="405" y="88" text-anchor="middle" font-size="14">Node</text>
+        <path d="M 150 82 L 350 82" stroke="#1d1d1f" stroke-width="1.5" fill="none"/>
+        <text x="165" y="76" font-size="11" fill="#515154">[0,*]</text>
+        <text x="165" y="98" font-size="11" fill="#515154" font-style="italic">[historic]</text>
+        <text x="335" y="76" font-size="11" fill="#515154" text-anchor="end">[1,1]</text>
+        <text x="250" y="76" text-anchor="middle" font-size="11" fill="#515154">[dag]</text>
+      </svg>
+    </div>
+    <div class="caption">一条线最多能同时有 3 个独立槽位：source-end / target-end / association-center。</div>
+  </div>
+</div>
+<div class="note-box">
+  <strong>⚠️ 决策点 2</strong> <span class="story-tag q">需确认</span>：
+  <ol>
+    <li>两端映射 marker 的排版：贴在基数<strong>下方</strong>（如示例）还是外侧？我建议下方，节省横向空间。</li>
+    <li>关联 marker 位置：线段中点 + 线的法向偏 ~10px（同 prev prototype）。</li>
+    <li>是否允许用户拖动调整 marker 位置？我建议 <strong>不做</strong>，始终自动排版。</li>
+  </ol>
+</div>
+
+<h2>4. 右侧属性面板 — 选中 Type / Relation 时</h2>
+<div class="grid">
+  <div class="frame">
+    <h3>选中 Type</h3>
+    <div class="ui-mock">
+      <div class="row"><span class="label">Name</span><input type="text" value="Customer" style="width: 160px;"></div>
+      <div class="row" style="align-items: flex-start;">
+        <span class="label" style="padding-top: 4px;">Semantics</span>
+        <div style="display:flex; flex-wrap: wrap; gap: 6px;">
+          <span class="pill">[abstract]<span class="x">✕</span></span>
+          <span class="pill">[singleton]<span class="x">✕</span></span>
+          <span class="pill add">+ Add marker</span>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Type 只有一组 markers（对应 <code>TypeElement.semantics</code>）。</div>
+  </div>
+  <div class="frame">
+    <h3>选中 Relation — 三个分组</h3>
+    <div class="ui-mock">
+      <div class="row" style="align-items: flex-start;">
+        <span class="label" style="padding-top: 4px;">Source<br>(Customer)</span>
+        <div style="display:flex; flex-direction: column; gap: 6px;">
+          <div>
+            Cardinality: <select><option>[1,1]</option></select>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap: wrap;">
+            <span class="pill">[class]<span class="x">✕</span></span>
+            <span class="pill add">+ Add</span>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="align-items: flex-start;">
+        <span class="label" style="padding-top: 4px;">Target<br>(Order)</span>
+        <div style="display:flex; flex-direction: column; gap: 6px;">
+          <div>
+            Cardinality: <select><option>[0,*]</option></select>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap: wrap;">
+            <span class="pill">[list]<span class="x">✕</span></span>
+            <span class="pill">[immutable]<span class="x">✕</span></span>
+            <span class="pill add">+ Add</span>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="align-items: flex-start;">
+        <span class="label" style="padding-top: 4px;">Association</span>
+        <div style="display:flex; gap: 6px; flex-wrap: wrap;">
+          <span class="pill add">+ Add marker</span>
+        </div>
+      </div>
+    </div>
+    <div class="caption">三段式：Source / Target 各带基数 + per-mapping markers；底部 Association 放整条线的 marker。</div>
+  </div>
+</div>
+<div class="frame">
+  <h3>+ Add marker 弹层</h3>
+  <div class="ui-mock" style="max-width: 320px;">
+    <div style="font-size: 12px; color: #86868b; margin-bottom: 6px;">Choose a marker · <em>only valid options shown</em></div>
+    <select style="width: 100%;">
+      <option>— select —</option>
+      <optgroup label="This end (mapping)">
+        <option>abstract</option>
+        <option>immutable</option>
+        <option>list</option>
+        <option>class</option>
+        <option>key: …</option>
+        <option>historic</option>
+      </optgroup>
+    </select>
+    <div style="margin-top: 8px;" class="row">
+      <span class="label">key type</span><input type="text" placeholder="CustomerId">
+    </div>
+    <div style="margin-top: 10px; text-align: right;">
+      <button style="padding: 4px 12px; font-size: 12px;">Add</button>
+    </div>
+  </div>
+  <div class="caption">面板三段各自打开的 picker 只展示"该槽位合法"的 marker：<br>
+    · Source/Target 槽位：附于映射的 marker<br>
+    · Association 槽位：附于关联的 marker<br>
+    · Type 槽位：附于类型的 marker
+  </div>
+</div>
+
+<h2>5. 按对象可选的 marker 集合</h2>
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th>Marker</th>
+      <th>Type</th>
+      <th>Relation.source / .target<br><span style="font-weight:normal; color:#86868b;">（映射级 · 贴基数）</span></th>
+      <th>Relation.association<br><span style="font-weight:normal; color:#86868b;">（关联级 · 线中点）</span></th>
+      <th>参数</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><code>abstract</code></td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+    <tr><td><code>immutable</code> / <code>imm</code></td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+    <tr><td><code>singleton</code></td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td><code>list</code></td><td>—</td><td>✓ <span style="color:#86868b;">（仅多值端）</span></td><td>—</td><td>—</td></tr>
+    <tr><td><code>class</code></td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+    <tr><td><code>key</code></td><td>—</td><td>✓</td><td>—</td><td>keyType: 字符串</td></tr>
+    <tr><td><code>hierarchy</code></td><td>—</td><td>—</td><td>✓ <span style="color:#86868b;">（仅递归关联）</span></td><td>—</td></tr>
+    <tr><td><code>dag</code></td><td>—</td><td>—</td><td>✓ <span style="color:#86868b;">（仅递归关联）</span></td><td>—</td></tr>
+    <tr><td><code>multiple_hierarchies</code></td><td>—</td><td>—</td><td>✓ <span style="color:#86868b;">（仅递归关联）</span></td><td>—</td></tr>
+    <tr><td><code>historic</code></td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  </tbody>
+</table>
+<div class="note-box">
+  <strong>⚠️ 决策点 3</strong> <span class="story-tag q">需确认</span>：
+  <ol>
+    <li><strong>"仅多值端"/"仅递归关联" 这种语义约束</strong>是强制的（picker 只在多值端才出现 <code>[list]</code>）还是只给 tooltip 提示？我建议强制，更友好。"多值"判定：source/target 基数属于 <code>one_or_more</code> / <code>zero_or_more</code> / <code>two_or_more</code> / <code>range(max=null 或 max&gt;1)</code>。</li>
+    <li>"递归关联"判定：source.typeId === target.typeId。</li>
+    <li>同一槽位是否允许同 marker 重复？我建议 <strong>不允许</strong>。<code>key</code> 重选覆盖 keyType。</li>
+    <li>schema 里的 <code>range</code>（= <code>[n1, n2]</code>）和 PRD 一样<strong>从 UI 下拉里移除</strong>，保留在 schema 里不生效（向后兼容）？还是连 schema 一起清理？建议先只从 UI 移除，schema 清理另开一条小 story。</li>
+  </ol>
+</div>
+
+<h2>6. 数据模型调整</h2>
+<div class="frame">
+<pre style="margin: 0; font-size: 12px; color: #1d1d1f; font-family: 'SF Mono', Menlo, monospace; background: #fafafa; padding: 12px; border-radius: 8px; overflow-x: auto;">// TypeElement — 已就位
+TypeElement.semantics?: ShortSemantic[]      // 可选
+
+// RelationElement — 当前只有一个 semantics[]；要按三段拆分
+RelationElement {
+  source: { typeId, cardinality, cardinalityRange?, semantics?: ShortSemantic[] }  // 映射级
+  target: { typeId, cardinality, cardinalityRange?, semantics?: ShortSemantic[] }  // 映射级
+  associationSemantics?: ShortSemantic[]  // 关联级（中点展示）
+}</pre>
+<div class="caption" style="margin-top: 10px;">
+  需要：<br>
+  · <code>RelationEnd.semantics</code>（新字段，映射级 marker）<br>
+  · <code>RelationElement.associationSemantics</code>（新字段，关联级 marker）<br>
+  · 废弃当前的 <code>RelationElement.semantics</code>（或保留作兼容回落，迁移到 associationSemantics）<br>
+  · schema 同步更新；<code>ShortSemantic.range</code> 从 UI picker 移除
+</div>
+</div>
+
+<h2>7. 还没决定的边界问题</h2>
+<table class="decision-table">
+  <thead><tr><th>问题</th><th>我的默认建议</th><th>需你拍板？</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Type 上的 marker 位置：矩形外上方 vs 内侧顶部？</td>
+      <td>矩形外上方（和 Fowler 原书一致，且不挤压 Type 名的垂直居中）</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>marker 超过矩形宽度怎么办？</td>
+      <td>允许溢出显示（文本 text-anchor middle，宽度不参与 Type 自适应计算）</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Relation 的 marker 支持多少个？</td>
+      <td>无硬上限，按“中点 + 单行”显示，和 Type 一致</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>marker 本身是否可选中？（点它 = 选中宿主 Type/Relation？）</td>
+      <td>点 marker = 选中宿主；pill 在右侧面板里删除</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Phase 1 是否提供重排 marker 顺序？</td>
+      <td>不做，按添加顺序显示</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>已有 Generalization 是否也能带 marker？（PRD 里 <code>immutable</code> 可附划分）</td>
+      <td>Phase 1 <strong>不做</strong>，只覆盖 Type + Relation（story 范围）；后续单独加一条 story</td>
+      <td>✅</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>8. 下一步</h2>
+<div class="note-box">
+  <ol>
+    <li>你拍板上面 3 个 ⚠️ 决策点 + 第 7 节的表。</li>
+    <li>我按结论实现：左侧工具按钮 (ME-032)、Canvas 上的 marker 渲染 (ME-033 / ME-034)、属性面板的 pill + picker (支撑 033/034 的 AC)，以及 store 的 add/remove action。</li>
+    <li>Generalization 上的 marker 另开一条 story（后续处理）。</li>
+  </ol>
+</div>
+
+</body>
+</html>
