@@ -82,7 +82,9 @@
       },
       "isDerived": false,
       "semantics": [],
-      "controlPoints": []
+      "layout": {
+        "controlPoints": []
+      }
     },
     {
       "id": "rel-2",
@@ -97,7 +99,9 @@
       },
       "isDerived": false,
       "semantics": [],
-      "controlPoints": []
+      "layout": {
+        "controlPoints": []
+      }
     },
     {
       "id": "note-1",

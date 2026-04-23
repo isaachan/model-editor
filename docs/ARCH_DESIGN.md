@@ -389,5 +389,58 @@ const STORAGE_KEY = 'model-editor-current';
 - Store 所有 action 参数类型化
 - Konva 组件 Props 严格类型
 
-### 11.2 测试策略（后续补充）
-- 单元测试：工具函数（几何计算、基数
+### 11.2 测试策略
+
+**测试金字塔：**
+
+```
+    ┌─────────────────────┐
+    │  E2E 测试 (5%)       │  核心工作流：创建→编辑→导出
+    ├─────────────────────┤
+    │  集成测试 (15%)      │  Store 集成、组件交互
+    ├─────────────────────┤
+    │  单元测试 (80%)      │  工具函数、纯逻辑
+    └─────────────────────┘
+```
+
+**单元测试范围：**
+- `utils/geometry.ts` — 几何计算（边框交点、距离、吸附计算）
+- `utils/cardinality.ts` — 基数符号绘制逻辑、路径生成
+- `utils/export.ts` — 导出数据转换
+- History Store — push/undo/redo 边界情况
+
+**集成测试范围：**
+- Diagram Store — 增删改查操作、级联删除（删除 Type 同时删除关联 Relation）
+- Editor Store — 工具切换、多选、选中状态管理
+- 主要 React 组件渲染（TypeNode、RelationLine）
+
+**E2E 测试范围 (Playwright)：**
+- 创建 Type 节点 → 修改名称 → 删除
+- 创建两个 Type → 连接关系线 → 设置两端基数
+- 缩放 + 平移画布 → 重置视图
+- 执行操作 → 撤销 → 重做
+- 导出 PNG / SVG 功能
+
+**测试工具选型：**
+- 单元测试：Vitest
+- React 组件测试：@testing-library/react
+- E2E 测试：Playwright（可选，P2 优先级）
+
+---
+
+## 12. 开发流程规范
+
+### 12.1 Story 驱动开发
+- 每个开发任务必须对应 `stories.csv` 中的一个 User Story
+- 开发前确认 Story 状态，从 Backlog 中按优先级选取，并更新被选取的 Story 状态 -> InDev
+- 完成后更新 Story 状态 → Done
+
+### 12.2 提交规范
+- 遵循 Conventional Commits 格式
+- `feat(ME-XXX): 实现 Type 节点创建功能`
+- `fix(ME-XXX): 修复关系线拖拽时不跟随的问题`
+- `docs: 更新架构设计文档`
+
+*文档版本：1.1*
+*最后更新：2026-04-23*
+*架构确认：可开始 Phase 1 开发*

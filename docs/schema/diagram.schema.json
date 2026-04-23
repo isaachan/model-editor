@@ -156,7 +156,7 @@
     "typeElement": {
       "type": "object",
       "description": "A Type node (core concept in Martin Fowler notation)",
-      "required": ["id", "type", "name", "semantics", "layout"],
+      "required": ["id", "type", "name", "layout"],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -185,10 +185,36 @@
         }
       }
     },
+    "relationLayout": {
+      "description": "Layout information for relation lines - separate from semantics",
+      "type": "object",
+      "properties": {
+        "controlPoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/point"
+          },
+          "description": "Optional control points for manual path adjustment (Bezier curve)"
+        },
+        "sourceLabelOffset": {
+          "$ref": "#/definitions/point",
+          "description": "Offset of source cardinality label from default position"
+        },
+        "targetLabelOffset": {
+          "$ref": "#/definitions/point",
+          "description": "Offset of target cardinality label from default position"
+        },
+        "semanticLabelOffset": {
+          "$ref": "#/definitions/point",
+          "description": "Offset of semantic marker label from default position"
+        }
+      },
+      "additionalProperties": false
+    },
     "relationElement": {
       "type": "object",
       "description": "A relationship between two types with cardinality constraints on both ends",
-      "required": ["id", "type", "source", "target", "isDerived", "semantics"],
+      "required": ["id", "type", "source", "target"],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -221,12 +247,9 @@
           "description": "Short semantic statement markers attached to this relation",
           "default": []
         },
-        "controlPoints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/point"
-          },
-          "description": "Optional control points for manual path adjustment (Bezier curve)"
+        "layout": {
+          "$ref": "#/definitions/relationLayout",
+          "description": "Layout information for the relation line"
         }
       }
     },
