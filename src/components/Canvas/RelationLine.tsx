@@ -147,17 +147,39 @@ function EndSemanticLabel({
 }) {
   if (!markers || markers.length === 0) return null;
   const text = renderBrackets(markers);
-  // Push text ~32px along the line (past the cardinality glyph) and offset
-  // ~12px perpendicular so it does not overlap the line itself.
-  const along = 32;
+  // Push text ~28px along the line past the cardinality glyph, then anchor it
+  // so the text grows OUTWARD away from the Type box (preventing clipping
+  // when multiple markers make the label longer than a fixed width).
+  const along = 28;
   const perp = 12;
-  const px = endpoint.x + tangent.x * along + -tangent.y * perp;
-  const py = endpoint.y + tangent.y * along + tangent.x * perp;
+  const ax = endpoint.x + tangent.x * along + -tangent.y * perp;
+  const ay = endpoint.y + tangent.y * along + tangent.x * perp;
+
+  // Predominantly horizontal tangent → anchor left/right.
+  // Predominantly vertical tangent → anchor top/bottom with center alignment.
+  const BOX = 240;
+  const horizontal = Math.abs(tangent.x) >= Math.abs(tangent.y);
+  if (horizontal) {
+    const goingRight = tangent.x >= 0;
+    return (
+      <Text
+        x={goingRight ? ax : ax - BOX}
+        y={ay - 7}
+        width={BOX}
+        text={text}
+        align={goingRight ? 'left' : 'right'}
+        fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
+        fontSize={11}
+        fill="#515154"
+        listening={false}
+      />
+    );
+  }
   return (
     <Text
-      x={px - 80}
-      y={py - 7}
-      width={160}
+      x={ax - BOX / 2}
+      y={tangent.y >= 0 ? ay : ay - 14}
+      width={BOX}
       text={text}
       align="center"
       fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"

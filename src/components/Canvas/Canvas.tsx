@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Group, Layer, Rect, Stage } from 'react-konva';
+import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
 import { CANVAS } from '@/constants/defaults';
-import { isGeneralization, isRelation, isType, type GeneralizationElement, type TypeElement } from '@/models/diagram';
+import { isGeneralization, isRelation, isType, type GeneralizationElement, type ShortSemantic, type TypeElement } from '@/models/diagram';
 import { routeOrthogonal, type Point, type RoutingResult, type Side } from '@/utils/routing';
+import {
+  SEMANTIC_CATALOG,
+  isMultivalued,
+  type SemanticCatalogEntry,
+  type SemanticScope,
+} from '@/constants/semantics';
 import { TypeNode } from './TypeNode';
 import { RelationLine } from './RelationLine';
 import { GeneralizationBox } from './GeneralizationBox';
@@ -105,6 +112,7 @@ function isEditableTarget(target: EventTarget | null) {
 
 export function Canvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<Konva.Stage | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   /**
    * Ephemeral position overrides while a Type is being dragged, so relation
@@ -118,6 +126,21 @@ export function Canvas() {
     origin: { x: number; y: number };
   } | null>(null);
   const [marquee, setMarquee] = useState<{ start: Point; current: Point } | null>(null);
+  /**
+   * Short-semantic picker popup. `target` records what was clicked; `x/y` are
+   * container-relative pointer coords for positioning the HTML overlay; for
+   * relations, `endChoice` lets the user first pick which scope to edit.
+   */
+  const [semanticPicker, setSemanticPicker] = useState<
+    | {
+        x: number;
+        y: number;
+        target:
+          | { kind: 'type'; id: string }
+          | { kind: 'relation'; id: string; endChoice: 'source' | 'target' | 'association' | null };
+      }
+    | null
+  >(null);
 
   const elements = useDiagramStore((s) => s.elements);
   const addTypeAt = useDiagramStore((s) => s.addTypeAt);
@@ -129,6 +152,9 @@ export function Canvas() {
   const moveGeneralizationBy = useDiagramStore((s) => s.moveGeneralizationBy);
   const attachTypeToGeneralization = useDiagramStore((s) => s.attachTypeToGeneralization);
   const detachTypeFromGeneralization = useDiagramStore((s) => s.detachTypeFromGeneralization);
+  const addTypeSemantic = useDiagramStore((s) => s.addTypeSemantic);
+  const addRelationMappingSemantic = useDiagramStore((s) => s.addRelationMappingSemantic);
+  const addRelationAssociationSemantic = useDiagramStore((s) => s.addRelationAssociationSemantic);
 
   const currentTool = useEditorStore((s) => s.currentTool);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -181,7 +207,6 @@ export function Canvas() {
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.code === 'Space') setSpacePressed(false);
     };
-
     const handleBlur = () => setSpacePressed(false);
 
     window.addEventListener('keydown', handleKeyDown);
@@ -193,6 +218,10 @@ export function Canvas() {
       window.removeEventListener('blur', handleBlur);
     };
   }, [deleteElements, deselectAll, selectedIds, setHovered, setTool]);
+
+  useEffect(() => {
+    if (currentTool !== 'shortSemantic') setSemanticPicker(null);
+  }, [currentTool]);
 
   const toWorldPoint = (point: Point): Point => ({
     x: (point.x - viewport.x) / viewport.scale,
@@ -447,6 +476,17 @@ export function Canvas() {
     setPendingGeneralizationParent(typeId);
   };
 
+  /** Open the short-semantic picker at the current pointer position. */
+  const openSemanticPickerFor = (
+    target:
+      | { kind: 'type'; id: string }
+      | { kind: 'relation'; id: string; endChoice: 'source' | 'target' | 'association' | null },
+  ) => {
+    const pointer = stageRef.current?.getPointerPosition();
+    if (!pointer) return;
+    setSemanticPicker({ x: pointer.x, y: pointer.y, target });
+  };
+
   const handleTypeDragSettled = (typeId: string, x: number, y: number) => {
     // Commit the move first so the store has fresh coordinates.
     moveElement(typeId, x, y);
@@ -493,6 +533,7 @@ export function Canvas() {
     >
       {size.width > 0 && size.height > 0 && (
         <Stage
+          ref={stageRef}
           width={size.width}
           height={size.height}
           onMouseDown={handleStageMouseDown}
@@ -550,7 +591,14 @@ export function Canvas() {
                     hovered={hoveredId === relation.id}
                     onSelect={() => {
                       if (currentTool === 'select') select(relation.id);
-                      else if (currentTool === 'shortSemantic') select(relation.id);
+                      else if (currentTool === 'shortSemantic') {
+                        select(relation.id);
+                        openSemanticPickerFor({
+                          kind: 'relation',
+                          id: relation.id,
+                          endChoice: null,
+                        });
+                      }
                     }}
                     onHoverChange={(h) => setHovered(h ? relation.id : null)}
                   />
@@ -578,6 +626,9 @@ export function Canvas() {
                       handleTypeClickInRelationMode(el.id);
                     } else if (currentTool === 'generalization') {
                       handleTypeClickInGeneralizationMode(el.id);
+                    } else if (currentTool === 'shortSemantic') {
+                      select(el.id);
+                      openSemanticPickerFor({ kind: 'type', id: el.id });
                     } else {
                       select(el.id);
                     }
@@ -629,6 +680,310 @@ export function Canvas() {
             : '请先点击一个 Type 作为父类，然后在画布空白处点击以放置容器'}
         </div>
       )}
+
+      {currentTool === 'shortSemantic' && !semanticPicker && (
+        <div
+          className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-full border px-4 py-2 text-xs shadow-sm"
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderColor: 'var(--color-separator)',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          点击 Type 或 Relation 以添加短语义标记（ESC 退出）
+        </div>
+      )}
+
+      {semanticPicker && (
+        <SemanticPickerPopup
+          state={semanticPicker}
+          elements={elements}
+          onClose={() => setSemanticPicker(null)}
+          onPickType={(marker) => {
+            if (semanticPicker.target.kind !== 'type') return;
+            addTypeSemantic(semanticPicker.target.id, marker);
+            setSemanticPicker(null);
+          }}
+          onPickRelationMapping={(end, marker) => {
+            if (semanticPicker.target.kind !== 'relation') return;
+            addRelationMappingSemantic(semanticPicker.target.id, end, marker);
+            setSemanticPicker(null);
+          }}
+          onPickRelationAssociation={(marker) => {
+            if (semanticPicker.target.kind !== 'relation') return;
+            addRelationAssociationSemantic(semanticPicker.target.id, marker);
+            setSemanticPicker(null);
+          }}
+          onChooseScope={(scope) => {
+            setSemanticPicker((s) =>
+              s && s.target.kind === 'relation'
+                ? { ...s, target: { ...s.target, endChoice: scope } }
+                : s,
+            );
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+interface PickerState {
+  x: number;
+  y: number;
+  target:
+    | { kind: 'type'; id: string }
+    | {
+        kind: 'relation';
+        id: string;
+        endChoice: 'source' | 'target' | 'association' | null;
+      };
+}
+
+/**
+ * Floating picker for short-semantic markers. Anchored at the click pointer,
+ * rendered as plain HTML over the canvas. Filters the marker catalog by
+ * scope and by per-kind constraints (multivalued mapping / recursive relation
+ * / duplicates). For relations, first shows a scope chooser; once the user
+ * picks Source/Target/Association, it renders the filtered marker list.
+ * Markers needing a parameter (key) render an inline text input.
+ */
+function SemanticPickerPopup({
+  state,
+  elements,
+  onClose,
+  onPickType,
+  onPickRelationMapping,
+  onPickRelationAssociation,
+  onChooseScope,
+}: {
+  state: PickerState;
+  elements: ReturnType<typeof useDiagramStore.getState>['elements'];
+  onClose: () => void;
+  onPickType: (marker: ShortSemantic) => void;
+  onPickRelationMapping: (end: 'source' | 'target', marker: ShortSemantic) => void;
+  onPickRelationAssociation: (marker: ShortSemantic) => void;
+  onChooseScope: (scope: 'source' | 'target' | 'association') => void;
+}) {
+  const { target } = state;
+  const element = elements.find((e) => e.id === target.id) ?? null;
+  const [pendingKey, setPendingKey] = useState<SemanticCatalogEntry | null>(null);
+  const [keyInput, setKeyInput] = useState('');
+
+  if (!element) return null;
+
+  // Build (scope, existing-kinds, multivalued, recursive) based on target.
+  let scope: SemanticScope | null = null;
+  let existingKinds = new Set<string>();
+  let multivalued = false;
+  let recursive = false;
+
+  if (target.kind === 'type' && element.type === 'type') {
+    scope = 'type';
+    existingKinds = new Set((element.semantics ?? []).map((m) => m.kind));
+  } else if (target.kind === 'relation' && element.type === 'relation') {
+    recursive = element.source.typeId === element.target.typeId;
+    if (target.endChoice === 'source') {
+      scope = 'mapping';
+      existingKinds = new Set((element.source.semantics ?? []).map((m) => m.kind));
+      multivalued = isMultivalued(element.source.cardinality);
+    } else if (target.endChoice === 'target') {
+      scope = 'mapping';
+      existingKinds = new Set((element.target.semantics ?? []).map((m) => m.kind));
+      multivalued = isMultivalued(element.target.cardinality);
+    } else if (target.endChoice === 'association') {
+      scope = 'association';
+      existingKinds = new Set(
+        (element.associationSemantics ?? []).map((m) => m.kind),
+      );
+    }
+  }
+
+  const commit = (marker: ShortSemantic) => {
+    if (target.kind === 'type') {
+      onPickType(marker);
+    } else if (target.kind === 'relation') {
+      if (target.endChoice === 'source' || target.endChoice === 'target') {
+        onPickRelationMapping(target.endChoice, marker);
+      } else if (target.endChoice === 'association') {
+        onPickRelationAssociation(marker);
+      }
+    }
+  };
+
+  const pickEntry = (entry: SemanticCatalogEntry) => {
+    if (entry.needsParam) {
+      setPendingKey(entry);
+      setKeyInput('');
+      return;
+    }
+    commit({ kind: entry.kind } as ShortSemantic);
+  };
+
+  const commitKey = () => {
+    const trimmed = keyInput.trim();
+    if (!trimmed || !pendingKey) return;
+    commit({ kind: 'key', keyType: trimmed });
+  };
+
+  const available = scope
+    ? SEMANTIC_CATALOG.filter((e) => {
+        if (scope && !e.scopes.includes(scope)) return false;
+        if (e.requiresMultivalued && !multivalued) return false;
+        if (e.requiresRecursive && !recursive) return false;
+        if (existingKinds.has(e.kind)) return false;
+        return true;
+      })
+    : [];
+
+  // Position so the popup doesn't overflow the canvas; simple clamp.
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    left: Math.max(8, state.x + 12),
+    top: Math.max(8, state.y + 12),
+    zIndex: 20,
+    minWidth: 180,
+    maxWidth: 240,
+  };
+
+  const relationScopeChooser =
+    target.kind === 'relation' && target.endChoice === null ? (
+      <div className="flex flex-col gap-1 p-1.5">
+        <div
+          className="px-2 py-1 text-[11px]"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          在 Relation 的哪个范围添加？
+        </div>
+        <button
+          type="button"
+          onClick={() => onChooseScope('source')}
+          className="rounded-[6px] px-2 py-1.5 text-left text-xs transition-colors hover:bg-black/5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Source 端 (mapping)
+        </button>
+        <button
+          type="button"
+          onClick={() => onChooseScope('target')}
+          className="rounded-[6px] px-2 py-1.5 text-left text-xs transition-colors hover:bg-black/5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Target 端 (mapping)
+        </button>
+        <button
+          type="button"
+          onClick={() => onChooseScope('association')}
+          className="rounded-[6px] px-2 py-1.5 text-left text-xs transition-colors hover:bg-black/5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Association
+        </button>
+      </div>
+    ) : null;
+
+  return (
+    <>
+      {/* click-catcher overlay to close on outside click */}
+      <div
+        className="absolute inset-0"
+        style={{ zIndex: 15 }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      />
+      <div
+        className="rounded-[10px] border shadow-lg"
+        style={{
+          ...style,
+          borderColor: 'var(--color-separator)',
+          background: '#fff',
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {relationScopeChooser ?? (
+          <div className="flex flex-col gap-0.5 p-1.5">
+            {pendingKey ? (
+              <div className="flex flex-col gap-1.5 p-1">
+                <div
+                  className="text-[11px]"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  key 的类型参数
+                </div>
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={keyInput}
+                    onChange={(e) => setKeyInput(e.target.value)}
+                    autoFocus
+                    placeholder="CustomerId"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitKey();
+                      else if (e.key === 'Escape') setPendingKey(null);
+                    }}
+                    className="flex-1 rounded-[6px] border px-2 py-1 text-xs outline-none"
+                    style={{
+                      borderColor: 'var(--color-separator)',
+                      background: '#fff',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={commitKey}
+                    className="rounded-[6px] px-2 py-1 text-xs text-white"
+                    style={{ background: 'var(--color-accent-blue)' }}
+                  >
+                    确定
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div
+                  className="px-2 py-1 text-[11px]"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  {target.kind === 'relation' && target.endChoice
+                    ? {
+                        source: 'Source 端 (mapping)',
+                        target: 'Target 端 (mapping)',
+                        association: 'Association',
+                      }[target.endChoice]
+                    : 'Type 标记'}
+                </div>
+                {available.length === 0 && (
+                  <div
+                    className="px-2 py-2 text-xs"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    无可添加的标记
+                  </div>
+                )}
+                {available.map((entry) => (
+                  <button
+                    key={entry.kind}
+                    type="button"
+                    onClick={() => pickEntry(entry)}
+                    className="rounded-[6px] px-2 py-1.5 text-left text-xs transition-colors hover:bg-black/5"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    [{entry.label}]
+                    {entry.needsParam && (
+                      <span
+                        className="ml-1 text-[10px]"
+                        style={{ color: 'var(--color-text-secondary)' }}
+                      >
+                        需参数
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
