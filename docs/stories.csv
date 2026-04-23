@@ -35,7 +35,7 @@ ME-033,Backlog,As a 建模者，我 want 为Type节点添加短语义陈述，so
 ME-034,Backlog,As a 建模者，我 want 为关系线添加短语义陈述，so that 我可以为关系附加简短约束标记,High,Business Story,短语义显示在关系线旁,- 选中短语义工具后点击关系线即可添加/n- 短语义标记使用方括号包裹显示在关系线旁/n- 支持选择预定义的标记类型list/class/key/hierarchy等
 ME-035,Backlog,As a 建模者，我 want 在左侧工具栏看到长语义便签工具选项，so that 我可以选择它来添加详细的业务规则说明,High,Business Story,左侧工具栏显示长语义便签工具,- 左侧工具栏显示"长语义"图标或按钮/n- 鼠标悬停有tooltip显示"添加长语义陈述便签"/n- 点击按钮后进入长语义便签创建模式
 ME-036,Backlog,As a 建模者，我 want 在画布上创建长语义陈述便签，so that 我可以详细描述复杂的业务规则,High,Business Story,便签显示为折角矩形样式,- 选中长语义工具后在画布任意位置点击创建便签/n- 便签显示为右上角折起的矩形样式/n- 便签顶部显示标题，内容区域可输入多行文本
-ME-037,Backlog,As a 建模者，我 want 选择长语义便签的标题类型，so that 我可以按分类组织不同类型的语义陈述,High,Business Story,支持6种标题类型,- 选中便签后右侧属性面板显示标题类型下拉选项/n- 支持选择标题类型包括：Constraint, Derivation, Instances, Method, Note, Overload/n- 标题显示在便签顶部加粗/n- 不同标题类型可使用不同颜色区分可选
+ME-037,Backlog,As a 建模者，我 want 选择长语义便签的标题类型，so that 我可以按分类组织不同类型的语义陈述,High,Business Story,第一阶段支持3种标题类型；Instances/Method/Overload 待 Type 扩展属性和操作后再加入,- 选中便签后右侧属性面板显示标题类型下拉选项/n- 第一阶段支持选择的标题类型包括：Constraint, Derivation, Note/n- 标题显示在便签顶部加粗/n- 不同标题类型可使用不同颜色区分可选
 ME-038,Backlog,As a 建模者，我 want 将长语义便签附加到Type或关系线上，so that 我可以明确说明针对的对象,High,Business Story,便签可以附加连接到其他元素,- 支持拖拽便签到Type节点或关系线上进行附着/n- 附着后便签与目标元素之间有虚线连接/n- 移动目标元素时便签一起移动可选
 ME-039,Backlog,As a 建模者，我 want 看到画布背景显示网格，so that 我可以画出整齐的图表,High,Business Story,画布背景显示均匀网格线,- 画布背景显示浅色均匀网格线/n- 网格间距可配置（默认20px）/n- 网格线不干扰正常绘图操作/n- 可以在设置中开关网格显示
 ME-040,Backlog,As a 建模者，我 want 移动元素时自动吸附到网格，so that 图表元素对齐整齐,High,Business Story,支持网格吸附功能,- 移动元素时，元素边缘自动吸附到最近的网格线交点/n- 吸附时有轻微的视觉反馈/n- 可以在设置中开关吸附功能

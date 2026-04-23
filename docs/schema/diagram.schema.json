@@ -98,33 +98,66 @@
       "description": "Cardinality constraint type"
     },
     "shortSemantic": {
-      "type": "string",
-      "enum": [
-        "abstract",
-        "immutable",
-        "imm",
-        "singleton",
-        "list",
-        "class",
-        "key",
-        "hierarchy",
-        "dag",
-        "multiple_hierarchies",
-        "historic"
-      ],
-      "description": "Short semantic statement marker"
+      "description": "Short semantic statement marker. Uses a discriminated union on `kind` to allow markers with parameters (e.g. key type, explicit range bounds).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "abstract",
+                "immutable",
+                "singleton",
+                "list",
+                "class",
+                "hierarchy",
+                "dag",
+                "multiple_hierarchies",
+                "historic"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Keyed mapping marker: [key: <keyType>]",
+          "required": ["kind", "keyType"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "key" },
+            "keyType": {
+              "type": "string",
+              "description": "Name of the type used as the map key"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Explicit cardinality bounds marker: [n1, n2]",
+          "required": ["kind", "min", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "range" },
+            "min": { "type": "number" },
+            "max": {
+              "description": "Upper bound; use null for unbounded (*)",
+              "oneOf": [{ "type": "number" }, { "type": "null" }]
+            }
+          }
+        }
+      ]
     },
     "longSemanticHeading": {
       "type": "string",
       "enum": [
         "Constraint",
         "Derivation",
-        "Instances",
-        "Method",
-        "Note",
-        "Overload"
+        "Note"
       ],
-      "description": "Long semantic note heading type"
+      "description": "Long semantic note heading type. Note: Method/Overload/Instances are reserved for future phases when types support attributes/operations."
     },
     "partitionCompleteness": {
       "type": "string",

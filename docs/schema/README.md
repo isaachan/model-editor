@@ -119,31 +119,41 @@ Long semantic statement in a folded corner note box.
 }
 ```
 
-**Heading Types:**
+**Heading Types (Phase 1):**
 
 | Heading | Purpose |
 |---------|---------|
 | `Constraint` | Assertion that must be true for all instances |
 | `Derivation` | How a derived relation is calculated |
-| `Instances` | Enumeration of all valid instances |
-| `Method` | Algorithm description for an operation |
 | `Note` | Informal descriptive comment |
-| `Overload` | How this type overloads inherited features |
+
+> **Reserved for future phases:** `Instances`, `Method`, `Overload` depend on types having attributes/operations.
+> These will be added back once the type model is extended beyond name-only.
 
 ## Short Semantic Markers
 
-| Marker | Applies To | Meaning |
-|--------|------------|---------|
-| `abstract` | Type / Relation | Type cannot have direct instances / Relation must be implemented by subtypes |
-| `immutable` / `imm` | Relation / Partition | Relation cannot be changed / Subtype cannot be changed |
-| `singleton` | Type | Only one instance allowed |
-| `list` | Relation (multi-value) | Return as ordered list |
-| `class` | Relation | Relation belongs to the class (static), not to instances |
-| `key` | Relation | Qualified key lookup |
-| `hierarchy` | Recursive relation | Forms a tree hierarchy |
-| `dag` | Recursive relation | Forms a directed acyclic graph |
-| `multiple_hierarchies` | Recursive relation | Allows multiple hierarchies |
-| `historic` | Relation | Keep historical connection trace |
+Short semantic markers are represented as objects with a `kind` discriminator, allowing markers with parameters.
+
+```json
+{ "kind": "abstract" }
+{ "kind": "key", "keyType": "Person" }
+{ "kind": "range", "min": 2, "max": 5 }
+{ "kind": "range", "min": 1, "max": null }   // unbounded upper
+```
+
+| Kind | Parameters | Applies To | Meaning |
+|------|-----------|------------|---------|
+| `abstract` | — | Type / Relation | Type cannot have direct instances / Relation must be implemented by subtypes |
+| `immutable` | — | Relation / Partition | Relation cannot be changed / Subtype cannot be changed |
+| `singleton` | — | Type | Only one instance allowed |
+| `list` | — | Relation (multi-value) | Return as ordered list |
+| `class` | — | Relation | Relation belongs to the class (static), not to instances |
+| `key` | `keyType: string` | Relation | Qualified key lookup, keyed by `keyType` |
+| `range` | `min: number`, `max: number\|null` | Relation | Explicit cardinality bounds `[min, max]` |
+| `hierarchy` | — | Recursive relation | Forms a tree hierarchy |
+| `dag` | — | Recursive relation | Forms a directed acyclic graph |
+| `multiple_hierarchies` | — | Recursive relation | Allows multiple hierarchies |
+| `historic` | — | Relation | Keep historical connection trace |
 
 ## File Structure
 
@@ -173,6 +183,13 @@ ajv validate -s diagram.schema.json -d examples/sample-diagram.json
 ```
 
 ## Changelog
+
+### 1.1 (2026-04-23)
+
+- Fixed top-level `additionalProperties: false` placement.
+- `shortSemantic` changed from string enum to discriminated-union object, enabling parameters for `key` (`keyType`) and `range` (`min`, `max`).
+- Removed redundant `imm` alias; use `immutable`.
+- Narrowed `longSemanticHeading` to Phase 1 headings (`Constraint`, `Derivation`, `Note`). `Instances` / `Method` / `Overload` reserved for when types gain attributes/operations.
 
 ### 1.0 (2026-04-19)
 

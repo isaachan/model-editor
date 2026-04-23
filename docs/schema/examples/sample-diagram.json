@@ -12,7 +12,7 @@
       "id": "type-1",
       "type": "type",
       "name": "Party",
-      "semantics": ["abstract"],
+      "semantics": [{ "kind": "abstract" }],
       "layout": {
         "x": 100,
         "y": 100,
