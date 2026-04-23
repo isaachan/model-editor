@@ -162,7 +162,8 @@
     "partitionCompleteness": {
       "type": "string",
       "enum": ["complete", "incomplete"],
-      "description": "Whether the generalization partition is complete (double bottom line) or incomplete (single bottom line)"
+      "default": "complete",
+      "description": "Whether the generalization partition is complete (single bottom line = the container rectangle's own bottom edge) or incomplete (double bottom line = an additional stroke drawn inside the container, above the bottom edge)"
     },
     "relationEnd": {
       "type": "object",

@@ -68,6 +68,25 @@ const TOOLS: ToolDef[] = [
       </svg>
     ),
   },
+  {
+    id: 'generalization',
+    label: 'Generalization',
+    tooltip: '创建类型泛化划分容器',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        {/* supertype */}
+        <rect x="9" y="2" width="6" height="4" stroke="currentColor" strokeWidth="1.3" fill="none" />
+        {/* connector */}
+        <line x1="12" y1="6" x2="12" y2="9" stroke="currentColor" strokeWidth="1.3" />
+        {/* container */}
+        <rect x="4" y="9" width="16" height="13" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        {/* subtypes */}
+        <rect x="6" y="11" width="5" height="3" stroke="currentColor" strokeWidth="1" fill="none" />
+        <rect x="13" y="11" width="5" height="3" stroke="currentColor" strokeWidth="1" fill="none" />
+        <rect x="6" y="15.5" width="5" height="3" stroke="currentColor" strokeWidth="1" fill="none" />
+      </svg>
+    ),
+  },
 ];
 
 export function LeftSidebar() {

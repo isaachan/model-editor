@@ -378,7 +378,7 @@ const STORAGE_KEY = 'model-editor-current';
 - [ ] ME-027: localStorage 自动保存
 
 ### P2 - 完整 Fowler 符号
-- [ ] ME-028 ~ ME-031: 泛化划分容器
+- [x] ME-028 ~ ME-031: 泛化划分容器（GeneralizationBox：自动收缩/扩展到包含子 Type；容器本身含父连接线；完整=单底边，不完整=底部内侧增补一条水平线；删除容器时子 Type 释放为自由 Type，删除父 Type 时级联删除其容器）
 - [ ] ME-032 ~ ME-034: 短语义陈述
 - [ ] ME-035 ~ ME-038: 长语义便签
 - [ ] ME-039 ~ ME-040: 网格 + 吸附

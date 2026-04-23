@@ -63,7 +63,27 @@ export type ShortSemantic =
   | { kind: 'range'; min: number; max: number | null };
 
 // Placeholders for later-story elements (generalization, note) go here.
-export type DiagramElement = TypeElement | RelationElement;
+export type DiagramElement = TypeElement | RelationElement | GeneralizationElement;
+
+export type PartitionCompleteness = 'complete' | 'incomplete';
+
+/**
+ * Generalization partition container (ME-028 ~ ME-031).
+ * A rectangular box anchored to exactly one parent Type (the supertype).
+ * Contains zero or more child Types (subtypes). The bottom line is either
+ * single (complete) or double with an inner extra stroke (incomplete).
+ * The connector line from parent to container is a rendering detail of
+ * this element (NOT a separate `relation`).
+ */
+export interface GeneralizationElement {
+  id: ElementId;
+  type: 'generalization';
+  parentTypeId: ElementId;
+  childTypeIds: ElementId[];
+  completeness: PartitionCompleteness;
+  /** Auto-computed from childTypeIds bbox + padding; falls back to defaults when empty. */
+  layout: Layout;
+}
 
 export interface DiagramMetadata {
   title: string;
@@ -75,4 +95,6 @@ export interface DiagramMetadata {
 export const isType = (e: DiagramElement): e is TypeElement => e.type === 'type';
 export const isRelation = (e: DiagramElement): e is RelationElement =>
   e.type === 'relation';
+export const isGeneralization = (e: DiagramElement): e is GeneralizationElement =>
+  e.type === 'generalization';
 

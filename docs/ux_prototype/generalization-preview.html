@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Generalization Prototype v2 — ME-028 ~ ME-031</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    padding: 40px;
+    line-height: 1.55;
+  }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 32px 0 10px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: #1d1d1f; }
+  .subtitle { font-size: 13px; color: #86868b; margin-bottom: 6px; }
+  .story-tag {
+    display: inline-block;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 6px;
+    letter-spacing: 0.3px;
+    background: #007aff;
+  }
+  .story-tag.na { background: #86868b; }
+  .story-tag.fix { background: #d70015; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .frame {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+  }
+  .frame .caption { font-size: 12px; color: #515154; margin-top: 10px; }
+  .canvas {
+    background: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
+    background-size: 20px 20px;
+    border-radius: 10px;
+    border: 1px solid #e5e5ea;
+    height: 280px;
+  }
+  .canvas.tall { height: 360px; }
+  svg { width: 100%; height: 100%; }
+  .note-box {
+    background: #fff8e5;
+    border: 1px solid #f2d37a;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    font-size: 13px;
+  }
+  .note-box ol { padding-left: 20px; }
+  .note-box li { margin: 6px 0; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: #515154; margin-top: 6px; flex-wrap: wrap; }
+  .legend span::before { content: '●'; margin-right: 4px; }
+  .legend .c1::before { color: #1d1d1f; }
+  .legend .c2::before { color: #007aff; }
+  .legend .c3::before { color: #ff9500; }
+  .decision-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+  }
+  .decision-table th, .decision-table td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e5ea;
+    vertical-align: top;
+  }
+  .decision-table th {
+    background: #fafafa;
+    font-weight: 600;
+    color: #515154;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .decision-table td.q { width: 220px; color: #1d1d1f; font-weight: 500; }
+  .decision-table tr:last-child td { border-bottom: none; }
+  code { background: #f0f0f3; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+  .alert {
+    background: #ffe9ec;
+    border: 1px solid #f6a8b2;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Generalization Prototype <span style="font-size:14px;color:#86868b;font-weight:400;">v2（用户第 1 轮反馈已吸收）</span></h1>
+<div class="subtitle">ME-028 / ME-029 / ME-030 / ME-031 实施前的视觉与行为对齐基准</div>
+<div class="legend">
+  <span class="c1">黑：现有元素 / 既成结构</span>
+  <span class="c2">蓝：选中或交互焦点</span>
+  <span class="c3">橙：新加 / 提议行为</span>
+</div>
+
+<div class="alert">
+  <strong>语义校正（v2，优先级高于 PRD/Schema 原文）：</strong><br>
+  · <strong>Complete（完整划分）</strong> = 容器底部 <strong>单</strong> 水平线（就是容器矩形自身的下边）<br>
+  · <strong>Incomplete（不完整划分）</strong> = 容器底部 <strong>双</strong> 水平线，多出来那根画在 <strong>容器内侧</strong><br>
+  · 默认创建为 <strong>Complete</strong><br>
+  与当前 prd.md / diagram.schema.json / stories.csv ME-031 描述相反，这三处需在实施时一并订正。
+</div>
+
+<h2>A. 目标视觉语法（修订版）</h2>
+
+<div class="grid">
+
+  <div class="frame">
+    <h3><span class="story-tag fix">修订</span>Complete — 单底线（默认）</h3>
+    <div class="canvas">
+      <svg viewBox="0 0 420 280">
+        <rect x="160" y="20" width="100" height="40" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="44" text-anchor="middle" font-size="12" fill="#1d1d1f">Supertype</text>
+        <line x1="210" y1="60" x2="210" y2="90" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="110" y="90" width="200" height="170" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="140" y="110" width="140" height="40" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="134" text-anchor="middle" font-size="12" fill="#1d1d1f">Subtype-1</text>
+        <rect x="140" y="170" width="140" height="40" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="194" text-anchor="middle" font-size="12" fill="#1d1d1f">Subtype-2</text>
+      </svg>
+    </div>
+    <div class="caption">只有容器矩形自身那条底边 = 完整划分。实例必须落在某个子类里。</div>
+  </div>
+
+  <div class="frame">
+    <h3><span class="story-tag fix">修订</span>Incomplete — 双底线（内侧）</h3>
+    <div class="canvas">
+      <svg viewBox="0 0 420 280">
+        <rect x="160" y="20" width="100" height="40" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="44" text-anchor="middle" font-size="12" fill="#1d1d1f">Supertype</text>
+        <line x1="210" y1="60" x2="210" y2="90" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="110" y="90" width="200" height="170" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+        <line x1="110" y1="255" x2="310" y2="255" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="140" y="110" width="140" height="40" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="134" text-anchor="middle" font-size="12" fill="#1d1d1f">Subtype-1</text>
+        <rect x="140" y="170" width="140" height="40" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="194" text-anchor="middle" font-size="12" fill="#1d1d1f">Subtype-2</text>
+        <path d="M350 255 L318 255" stroke="#ff9500" stroke-width="1.2" fill="none" marker-end="url(#arrA2)"/>
+        <text x="352" y="258" font-size="10" fill="#ff9500">内侧补线</text>
+        <defs><marker id="arrA2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#ff9500"/></marker></defs>
+      </svg>
+    </div>
+    <div class="caption">多出的一根线画在容器 <strong>里面</strong>，紧贴底边上方 5px。</div>
+  </div>
+
+  <div class="frame">
+    <h3><span class="story-tag na">视觉</span>Multi-level — 嵌套容器</h3>
+    <div class="canvas tall">
+      <svg viewBox="0 0 420 360">
+        <rect x="160" y="16" width="100" height="36" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="38" text-anchor="middle" font-size="12" fill="#1d1d1f">Party</text>
+        <line x1="210" y1="52" x2="210" y2="82" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="100" y="82" width="220" height="260" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="130" y="100" width="160" height="34" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="121" text-anchor="middle" font-size="12" fill="#1d1d1f">Person</text>
+        <line x1="210" y1="134" x2="210" y2="150" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="130" y="150" width="160" height="90" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+        <line x1="130" y1="235" x2="290" y2="235" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="145" y="158" width="130" height="28" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="176" text-anchor="middle" font-size="11" fill="#1d1d1f">Employee</text>
+        <rect x="145" y="194" width="130" height="28" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="212" text-anchor="middle" font-size="11" fill="#1d1d1f">Customer</text>
+        <rect x="130" y="260" width="160" height="34" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="210" y="281" text-anchor="middle" font-size="12" fill="#1d1d1f">Organization</text>
+      </svg>
+    </div>
+    <div class="caption">外层 Party 是 Complete（单底线）；内层 Person 是 Incomplete（双底线，内侧补线）。可任意层嵌套。</div>
+  </div>
+
+  <div class="frame">
+    <h3><span class="story-tag na">视觉</span>同父多次划分 — 容器间不重叠</h3>
+    <div class="canvas tall">
+      <svg viewBox="0 0 500 360">
+        <rect x="210" y="16" width="80" height="34" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="250" y="37" text-anchor="middle" font-size="12" fill="#1d1d1f">Person</text>
+        <line x1="250" y1="50" x2="250" y2="70" stroke="#1d1d1f" stroke-width="1.5"/>
+        <line x1="160" y1="70" x2="340" y2="70" stroke="#1d1d1f" stroke-width="1.5"/>
+        <line x1="160" y1="70" x2="160" y2="100" stroke="#1d1d1f" stroke-width="1.5"/>
+        <line x1="340" y1="70" x2="340" y2="100" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="80" y="100" width="160" height="200" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="85" y="115" font-size="10" fill="#86868b" font-style="italic">by gender · Complete</text>
+        <rect x="100" y="130" width="120" height="34" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="160" y="151" text-anchor="middle" font-size="11">Male</text>
+        <rect x="100" y="180" width="120" height="34" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="160" y="201" text-anchor="middle" font-size="11">Female</text>
+        <rect x="260" y="100" width="160" height="200" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+        <line x1="260" y1="295" x2="420" y2="295" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="265" y="115" font-size="10" fill="#86868b" font-style="italic">by role · Incomplete</text>
+        <rect x="280" y="130" width="120" height="34" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="340" y="151" text-anchor="middle" font-size="11">Employee</text>
+        <rect x="280" y="180" width="120" height="34" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="340" y="201" text-anchor="middle" font-size="11">Customer</text>
+        <path d="M240 205 L260 205" stroke="#ff9500" stroke-width="1.2" fill="none" marker-end="url(#arrA4)"/>
+        <text x="242" y="195" font-size="10" fill="#ff9500">禁止重叠</text>
+        <defs><marker id="arrA4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#ff9500"/></marker></defs>
+      </svg>
+    </div>
+    <div class="caption">每个容器独立的 completeness。容器间几何上不得重叠，拖动时若发生碰撞由系统阻止或回退。</div>
+  </div>
+
+  <div class="frame">
+    <h3><span class="story-tag na">视觉</span>水平排布 — 父类在左，容器在右</h3>
+    <div class="canvas">
+      <svg viewBox="0 0 480 260">
+        <rect x="20" y="100" width="100" height="40" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="70" y="124" text-anchor="middle" font-size="12" fill="#1d1d1f">Supertype</text>
+        <line x1="120" y1="120" x2="170" y2="120" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="170" y="30" width="280" height="200" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="200" y="60" width="220" height="36" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="310" y="82" text-anchor="middle" font-size="12">Subtype-1</text>
+        <rect x="200" y="112" width="220" height="36" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="310" y="134" text-anchor="middle" font-size="12">Subtype-2</text>
+        <rect x="200" y="164" width="220" height="36" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="310" y="186" text-anchor="middle" font-size="12">Subtype-3</text>
+      </svg>
+    </div>
+    <div class="caption">连接线从父类最近一边接到容器最近一边，自动选接入侧；保持水平/垂直一根线。</div>
+  </div>
+
+  <div class="frame">
+    <h3><span class="story-tag na">视觉</span>水平排布下的 Incomplete 标识</h3>
+    <div class="canvas">
+      <svg viewBox="0 0 480 260">
+        <rect x="20" y="100" width="100" height="40" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="70" y="124" text-anchor="middle" font-size="12" fill="#1d1d1f">Supertype</text>
+        <line x1="120" y1="120" x2="170" y2="120" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="170" y="30" width="280" height="200" fill="none" stroke="#1d1d1f" stroke-width="1.5"/>
+        <line x1="170" y1="225" x2="450" y2="225" stroke="#1d1d1f" stroke-width="1.5"/>
+        <rect x="200" y="60" width="220" height="36" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="310" y="82" text-anchor="middle" font-size="12">Subtype-1</text>
+        <rect x="200" y="112" width="220" height="36" fill="white" stroke="#1d1d1f" stroke-width="1.5"/>
+        <text x="310" y="134" text-anchor="middle" font-size="12">Subtype-2</text>
+      </svg>
+    </div>
+    <div class="caption">Incomplete 标识永远贴容器底边内侧（不随父类方向旋转），保持 Fowler 惯例。</div>
+  </div>
+</div>
+
+<h2>B. 交互结论（v1 已确认）</h2>
+<ul style="font-size:13px; color:#1d1d1f; padding-left:22px; line-height:1.8;">
+  <li><strong>ME-028</strong>：左侧工具栏新增泛化工具按钮，tooltip "创建类型泛化划分容器"，点击后 <code>ToolMode = 'generalization'</code>。</li>
+  <li><strong>ME-029</strong>：① 选父 Type（顶部/光标旁显示提示条 <em>"请先选择父 Type，然后在画布空白处点击以放置容器"</em>）→ ② 画布空白单击，在该点落一个<strong>固定尺寸空容器</strong>（约 220×140），连接线自动从父类最近一侧接入。</li>
+  <li><strong>ME-030</strong>：容器内 Type 工具点击 = 新建子 Type；外部 Type 可拖入；子 Type 可拖出变回自由 Type；容器随内容<strong>自动收缩/扩展</strong>，无手动 resize。</li>
+  <li><strong>ME-031</strong>：Inspector 单选 Incomplete / Complete，<strong>默认 Complete</strong>；视觉实时刷新单线/双线（内侧）。</li>
+</ul>
+
+<h2>C. 决策记录（Part C 12 问答案，锁定为实施依据）</h2>
+<table class="decision-table">
+  <thead><tr><th>#</th><th>问题</th><th>决策</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td class="q">容器创建方式</td><td>单击落一个固定尺寸空容器（约 220×140）。不做拖拽定尺寸。</td></tr>
+    <tr><td>2</td><td class="q">父 Type 绑定时机</td><td>先选父 Type 再点画布。未选时显示提示条引导。</td></tr>
+    <tr><td>3</td><td class="q">连接线语义</td><td>作为 <code>generalization</code> 元素的渲染细节，<strong>不</strong>进 <code>relations[]</code>。不可单独选中。</td></tr>
+    <tr><td>4</td><td class="q">无父 Type 容器</td><td>禁止。未选父 Type 时工具按钮点击无效（配合提示条）。</td></tr>
+    <tr><td>5</td><td class="q">子 Type 归属</td><td>容器内 Type 工具新建；或外部已有 Type 拖入容器成为子 Type。</td></tr>
+    <tr><td>6</td><td class="q">多层嵌套</td><td>必须支持，子 Type 可再作为下一层 generalization 的父类。</td></tr>
+    <tr><td>7</td><td class="q">同父多次划分</td><td>必须支持；容器间<strong>几何不重叠</strong>，碰撞时阻止移动或回退。</td></tr>
+    <tr><td>8</td><td class="q">容器大小</td><td>完全自动（子 bbox + padding），不提供手动 resize。</td></tr>
+    <tr><td>9</td><td class="q">拖出容器</td><td>允许。拖出后自动释放为自由 Type，容器自动收缩。</td></tr>
+    <tr><td>10</td><td class="q">删除语义</td><td>删容器 → 子 Type 全部<strong>释放为自由 Type</strong>；删父 Type → 级联删除其直接关联的 generalization 容器（等同删容器）。</td></tr>
+    <tr><td>11</td><td class="q">默认划分类型</td><td><strong>Complete</strong>（对应单底线）。</td></tr>
+    <tr><td>12</td><td class="q">沿用既有设计？</td><td>结构沿用 Schema <code>generalizationElement { parentTypeId, childTypeIds, completeness, layout }</code> 与 ARCH_DESIGN 的 <code>GeneralizationBox.tsx</code> / <code>ToolMode: 'generalization'</code>。语义字段（complete/incomplete 视觉、默认值）需同步订正。</td></tr>
+  </tbody>
+</table>
+
+<h2>D. 待同步更新的文档（实施时一并改）</h2>
+<div class="note-box">
+  <ol>
+    <li><strong>docs/prd.md</strong>：完整 / 不完整划分视觉描述互换；默认值改为"完整划分"。</li>
+    <li><strong>docs/schema/diagram.schema.json</strong>：<code>partitionCompleteness</code> description 改为 "complete = single bottom line / incomplete = double bottom line (inner extra stroke)"；默认值改为 <code>"complete"</code>；<code>childTypeIds</code> description 补注"子 Type 可在容器间迁移"。</li>
+    <li><strong>docs/stories.csv ME-031</strong>：验收条件的"完整=双 / 不完整=单"互换；默认改为"完整划分"。</li>
+    <li><strong>docs/ARCH_DESIGN.md</strong>：补段"容器自动收缩 + 容器重叠检测"职责；确认已列入 <code>ToolMode: 'generalization'</code>。</li>
+  </ol>
+</div>
+
+<p style="margin-top:18px;font-size:12px;color:#86868b;">
+路径：docs/ux_prototype/generalization-preview.html（v2）。本文件内决策一旦你确认，即作为 ME-028~031 的实施基准。
+</p>
+
+</body>
+</html>

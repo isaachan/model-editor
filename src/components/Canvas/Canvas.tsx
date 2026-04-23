@@ -4,10 +4,11 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
 import { CANVAS } from '@/constants/defaults';
-import { isRelation, isType, type TypeElement } from '@/models/diagram';
+import { isGeneralization, isRelation, isType, type GeneralizationElement, type TypeElement } from '@/models/diagram';
 import { routeOrthogonal, type Point, type RoutingResult, type Side } from '@/utils/routing';
 import { TypeNode } from './TypeNode';
 import { RelationLine } from './RelationLine';
+import { GeneralizationBox } from './GeneralizationBox';
 
 const MARKER_OFFSET_STEP = 18;
 const MIN_SCALE = 0.25;
@@ -120,15 +121,21 @@ export function Canvas() {
 
   const elements = useDiagramStore((s) => s.elements);
   const addTypeAt = useDiagramStore((s) => s.addTypeAt);
+  const addChildTypeAt = useDiagramStore((s) => s.addChildTypeAt);
   const moveElement = useDiagramStore((s) => s.moveElement);
   const addRelation = useDiagramStore((s) => s.addRelation);
   const deleteElements = useDiagramStore((s) => s.deleteElements);
+  const addGeneralizationAt = useDiagramStore((s) => s.addGeneralizationAt);
+  const moveGeneralizationBy = useDiagramStore((s) => s.moveGeneralizationBy);
+  const attachTypeToGeneralization = useDiagramStore((s) => s.attachTypeToGeneralization);
+  const detachTypeFromGeneralization = useDiagramStore((s) => s.detachTypeFromGeneralization);
 
   const currentTool = useEditorStore((s) => s.currentTool);
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const hoveredId = useEditorStore((s) => s.hoveredId);
   const viewport = useEditorStore((s) => s.viewport);
   const pendingRelationSource = useEditorStore((s) => s.pendingRelationSource);
+  const pendingGeneralizationParent = useEditorStore((s) => s.pendingGeneralizationParent);
   const select = useEditorStore((s) => s.select);
   const selectMany = useEditorStore((s) => s.selectMany);
   const deselectAll = useEditorStore((s) => s.deselectAll);
@@ -137,6 +144,7 @@ export function Canvas() {
   const setViewport = useEditorStore((s) => s.setViewport);
   const resetViewport = useEditorStore((s) => s.resetViewport);
   const setPendingRelationSource = useEditorStore((s) => s.setPendingRelationSource);
+  const setPendingGeneralizationParent = useEditorStore((s) => s.setPendingGeneralizationParent);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -164,6 +172,10 @@ export function Canvas() {
         deselectAll();
         setHovered(null);
       }
+
+      if (event.key === 'Escape' && !isEditableTarget(event.target)) {
+        setTool('select');
+      }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -180,7 +192,7 @@ export function Canvas() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [deleteElements, deselectAll, selectedIds, setHovered]);
+  }, [deleteElements, deselectAll, selectedIds, setHovered, setTool]);
 
   const toWorldPoint = (point: Point): Point => ({
     x: (point.x - viewport.x) / viewport.scale,
@@ -196,6 +208,29 @@ export function Canvas() {
   const types = elements.filter(isType).map(applyDrag);
   const typesById = new Map(types.map((t) => [t.id, t]));
   const relations = elements.filter(isRelation);
+  const generalizations = elements.filter(isGeneralization);
+  const generalizationsWithParent = generalizations
+    .map((gen) => {
+      const parent = typesById.get(gen.parentTypeId);
+      if (!parent) return null;
+      return { gen, parent };
+    })
+    .filter((entry): entry is { gen: GeneralizationElement; parent: TypeElement } => entry !== null);
+
+  /** Return the innermost container whose bounding box contains `point` (world coords). */
+  const containerAtPoint = (point: Point): GeneralizationElement | null => {
+    const hits = generalizations.filter(
+      (g) =>
+        point.x >= g.layout.x &&
+        point.x <= g.layout.x + g.layout.width &&
+        point.y >= g.layout.y &&
+        point.y <= g.layout.y + g.layout.height,
+    );
+    if (hits.length === 0) return null;
+    // Smallest area wins (innermost in nested case).
+    hits.sort((a, b) => a.layout.width * a.layout.height - b.layout.width * b.layout.height);
+    return hits[0];
+  };
   const baseRelationRenderData = relations
     .map((relation) => {
       const source = typesById.get(relation.source.typeId);
@@ -297,6 +332,16 @@ export function Canvas() {
     const worldPointer = toWorldPoint(pointer);
 
     if (currentTool === 'type') {
+      // If clicked inside a container on empty space, create the Type as a child.
+      const container = containerAtPoint(worldPointer);
+      if (container) {
+        const created = addChildTypeAt(container.id, worldPointer.x, worldPointer.y);
+        if (created) {
+          setTool('select');
+          select(created.id);
+        }
+        return;
+      }
       const created = addTypeAt(worldPointer.x, worldPointer.y);
       setTool('select');
       select(created.id);
@@ -306,6 +351,21 @@ export function Canvas() {
     if (currentTool === 'relation') {
       // Clicking empty cancels the pending source, but we stay in relation mode.
       setPendingRelationSource(null);
+      return;
+    }
+
+    if (currentTool === 'generalization') {
+      // Clicking empty without a pending parent is a no-op (prompt stays visible).
+      if (!pendingGeneralizationParent) return;
+      const created = addGeneralizationAt(
+        pendingGeneralizationParent,
+        worldPointer.x,
+        worldPointer.y,
+      );
+      if (created) {
+        setTool('select');
+        select(created.id);
+      }
       return;
     }
 
@@ -378,12 +438,46 @@ export function Canvas() {
     if (created) select(created.id);
   };
 
+  const handleTypeClickInGeneralizationMode = (typeId: string) => {
+    // Clicking the currently-pending parent toggles it off.
+    if (pendingGeneralizationParent === typeId) {
+      setPendingGeneralizationParent(null);
+      return;
+    }
+    setPendingGeneralizationParent(typeId);
+  };
+
+  const handleTypeDragSettled = (typeId: string, x: number, y: number) => {
+    // Commit the move first so the store has fresh coordinates.
+    moveElement(typeId, x, y);
+
+    const center: Point = {
+      x: x + (typesById.get(typeId)?.layout.width ?? 0) / 2,
+      y: y + (typesById.get(typeId)?.layout.height ?? 0) / 2,
+    };
+    const hitContainer = containerAtPoint(center);
+    const previousOwner = generalizations.find((g) => g.childTypeIds.includes(typeId)) ?? null;
+
+    if (hitContainer && hitContainer.id !== previousOwner?.id) {
+      // Do not allow a Type to become a child of a container whose parent is itself.
+      if (hitContainer.parentTypeId === typeId) {
+        if (previousOwner) detachTypeFromGeneralization(typeId);
+        return;
+      }
+      attachTypeToGeneralization(typeId, hitContainer.id);
+      return;
+    }
+    if (!hitContainer && previousOwner) {
+      detachTypeFromGeneralization(typeId);
+    }
+  };
+
   const containerCursor =
     panSession
       ? 'grabbing'
       : spacePressed
         ? 'grab'
-        : currentTool === 'type' || currentTool === 'relation'
+        : currentTool === 'type' || currentTool === 'relation' || currentTool === 'generalization'
           ? 'crosshair'
           : 'default';
   const typesDraggable = currentTool === 'select' && !spacePressed && !panSession;
@@ -410,6 +504,31 @@ export function Canvas() {
           {/* Background layer — opaque rect so stage clicks hit an empty target */}
           <Layer listening={false}>
             <Rect width={size.width} height={size.height} fill={CANVAS.background} />
+          </Layer>
+
+          {/* Generalization layer (below relations and types). */}
+          <Layer>
+            <Group x={viewport.x} y={viewport.y} scaleX={viewport.scale} scaleY={viewport.scale}>
+              {generalizationsWithParent.map(({ gen, parent }) => (
+                <GeneralizationBox
+                  key={gen.id}
+                  element={gen}
+                  parent={parent}
+                  selected={selectedIds.includes(gen.id)}
+                  hovered={hoveredId === gen.id}
+                  panModeActive={spacePressed}
+                  draggable={typesDraggable}
+                  onSelect={() => {
+                    if (currentTool === 'select') select(gen.id);
+                  }}
+                  onHoverChange={(h) => setHovered(h ? gen.id : null)}
+                  onDragMove={() => {
+                    /* Live drag preview is handled by Konva's local transform; no store writes. */
+                  }}
+                  onDragEnd={(dx, dy) => moveGeneralizationBy(gen.id, dx, dy)}
+                />
+              ))}
+            </Group>
           </Layer>
 
           {/* Relation layer (below types so line ends tuck under the boxes) */}
@@ -445,12 +564,16 @@ export function Canvas() {
                   element={el}
                   selected={selectedIds.includes(el.id)}
                   hovered={hoveredId === el.id}
-                  pendingSource={pendingRelationSource === el.id}
+                  pendingSource={
+                    pendingRelationSource === el.id || pendingGeneralizationParent === el.id
+                  }
                   panModeActive={spacePressed}
                   draggable={typesDraggable}
                   onSelect={() => {
                     if (currentTool === 'relation') {
                       handleTypeClickInRelationMode(el.id);
+                    } else if (currentTool === 'generalization') {
+                      handleTypeClickInGeneralizationMode(el.id);
                     } else {
                       select(el.id);
                     }
@@ -460,7 +583,7 @@ export function Canvas() {
                     setDragPos((prev) => ({ ...prev, [el.id]: { x, y } }))
                   }
                   onDragEnd={(x, y) => {
-                    moveElement(el.id, x, y);
+                    handleTypeDragSettled(el.id, x, y);
                     setDragPos((prev) => {
                       const next = { ...prev };
                       delete next[el.id];
@@ -486,6 +609,21 @@ export function Canvas() {
             </Group>
           </Layer>
         </Stage>
+      )}
+
+      {currentTool === 'generalization' && (
+        <div
+          className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-full border px-4 py-2 text-xs shadow-sm"
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderColor: 'var(--color-separator)',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          {pendingGeneralizationParent
+            ? '已选择父 Type — 在画布空白处点击以放置容器（ESC 取消）'
+            : '请先点击一个 Type 作为父类，然后在画布空白处点击以放置容器'}
+        </div>
       )}
     </div>
   );
