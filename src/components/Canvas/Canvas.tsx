@@ -615,23 +615,78 @@ export function Canvas() {
   const snapPoint = (x: number, y: number) => ({ x: snap(x), y: snap(y) });
 
   /**
-   * Grid dot positions covering the current visible area of the stage.
-   * Recomputed each render from viewport + canvas size; cheap enough because
-   * dot count is bounded by screen area / grid size.
+   * Grid dot positions covering the current visible area of the stage,
+   * extended to also cover the diagram's content bbox. The bbox extension
+   * matters for PNG export: the exporter temporarily resets pan/zoom to
+   * snapshot the full content, and without the bbox union the grid would
+   * only appear over whatever was visible on-screen before export.
    */
   const gridDots = (() => {
     if (!showGrid || size.width === 0 || size.height === 0) return null;
     const step = GRID.size;
-    const worldLeft = -viewport.x / viewport.scale;
-    const worldTop = -viewport.y / viewport.scale;
-    const worldRight = worldLeft + size.width / viewport.scale;
-    const worldBottom = worldTop + size.height / viewport.scale;
-    const startX = Math.floor(worldLeft / step) * step;
-    const startY = Math.floor(worldTop / step) * step;
+
+    // Visible viewport in world space.
+    const viewLeft = -viewport.x / viewport.scale;
+    const viewTop = -viewport.y / viewport.scale;
+    const viewRight = viewLeft + size.width / viewport.scale;
+    const viewBottom = viewTop + size.height / viewport.scale;
+
+    // Content bbox across all positioned elements.
+    let bboxLeft = Infinity;
+    let bboxTop = Infinity;
+    let bboxRight = -Infinity;
+    let bboxBottom = -Infinity;
+    for (const el of elements) {
+      if (isRelation(el)) continue;
+      const { x, y, width, height } = el.layout;
+      bboxLeft = Math.min(bboxLeft, x);
+      bboxTop = Math.min(bboxTop, y);
+      bboxRight = Math.max(bboxRight, x + width);
+      bboxBottom = Math.max(bboxBottom, y + height);
+    }
+
+    // Union of viewport and bbox (margin so dots don't butt against edges).
+    const margin = 40;
+    const left = Math.min(viewLeft, isFinite(bboxLeft) ? bboxLeft - margin : viewLeft);
+    const top = Math.min(viewTop, isFinite(bboxTop) ? bboxTop - margin : viewTop);
+    const right = Math.max(
+      viewRight,
+      isFinite(bboxRight) ? bboxRight + margin : viewRight,
+    );
+    const bottom = Math.max(
+      viewBottom,
+      isFinite(bboxBottom) ? bboxBottom + margin : viewBottom,
+    );
+
+    const startX = Math.floor(left / step) * step;
+    const startY = Math.floor(top / step) * step;
+    const cols = Math.ceil((right - startX) / step) + 1;
+    const rows = Math.ceil((bottom - startY) / step) + 1;
+
+    // Hard cap on dot count to keep rendering cheap when extreme zoom-out
+    // combined with a huge bbox would otherwise generate hundreds of
+    // thousands of circles.
+    const MAX_DOTS = 20000;
+    if (cols * rows > MAX_DOTS) {
+      // Fall back to viewport-only when the union would be too large; the
+      // user is zoomed far out and dots at GRID.size would be invisible
+      // anyway. PNG export in this regime already covers the bbox via the
+      // exporter's own margin.
+      const startVX = Math.floor(viewLeft / step) * step;
+      const startVY = Math.floor(viewTop / step) * step;
+      const dots: { x: number; y: number }[] = [];
+      for (let x = startVX; x <= viewRight; x += step) {
+        for (let y = startVY; y <= viewBottom; y += step) {
+          dots.push({ x, y });
+        }
+      }
+      return dots;
+    }
+
     const dots: { x: number; y: number }[] = [];
-    for (let x = startX; x <= worldRight; x += step) {
-      for (let y = startY; y <= worldBottom; y += step) {
-        dots.push({ x, y });
+    for (let i = 0; i < cols; i += 1) {
+      for (let j = 0; j < rows; j += 1) {
+        dots.push({ x: startX + i * step, y: startY + j * step });
       }
     }
     return dots;
