@@ -55,11 +55,41 @@ export function RelationLine({
     onSelect();
   };
 
+  // 自关联 loop 路径
+  const isSelfReference = _source.id === _target.id;
+  let linePoints = route.points;
+  let sourceAttach = route.sourceAttach;
+  let targetAttach = route.targetAttach;
+  let sourceTangent = route.sourceTangent;
+  let targetTangent = route.targetTangent;
+  if (isSelfReference) {
+    // 以 type box 右上角为起点，画一个矩形 loop
+    const { x, y, width, height } = _source.layout;
+    const loopW = Math.max(60, width * 0.8);
+    const loopH = Math.max(60, height * 0.8);
+    const startX = x + width;
+    const startY = y + 0.2 * height;
+    const endX = x + width / 2;
+    const endY = y;
+    linePoints = [
+      startX, startY, // 起点：右侧
+      startX + loopW, startY, // 向右
+      startX + loopW, startY - loopH, // 向上
+      endX, startY - loopH, // 向左
+      endX, endY, // 向下到 box 顶部
+    ];
+    // 端点坐标和切线
+    sourceAttach = { x: startX, y: startY };
+    targetAttach = { x: endX, y: endY };
+    sourceTangent = { x: 1, y: 0 };
+    targetTangent = { x: 0, y: -1 };
+  }
+
   return (
     <Group>
       {/* Visible line */}
       <Line
-        points={route.points}
+        points={linePoints}
         stroke={stroke}
         strokeWidth={strokeWidth}
         lineJoin="round"
@@ -68,7 +98,7 @@ export function RelationLine({
       />
       {/* Invisible fat hit line for click/hover */}
       <Line
-        points={route.points}
+        points={linePoints}
         stroke="transparent"
         strokeWidth={HIT_STROKE_WIDTH}
         lineJoin="round"
@@ -82,8 +112,8 @@ export function RelationLine({
       {/* Cardinality markers at each end */}
       <CardinalityMarker
         kind={relation.source.cardinality}
-        endpoint={route.sourceAttach}
-        tangent={route.sourceTangent}
+        endpoint={sourceAttach}
+        tangent={sourceTangent}
         label={
           relation.source.cardinality === 'two_or_more'
             ? String(relation.source.cardinalityRange?.[0] ?? 'n')
@@ -96,8 +126,8 @@ export function RelationLine({
       />
       <CardinalityMarker
         kind={relation.target.cardinality}
-        endpoint={route.targetAttach}
-        tangent={route.targetTangent}
+        endpoint={targetAttach}
+        tangent={targetTangent}
         label={
           relation.target.cardinality === 'two_or_more'
             ? String(relation.target.cardinalityRange?.[0] ?? 'n')
@@ -112,19 +142,19 @@ export function RelationLine({
       {/* Per-mapping semantic markers, rendered near each cardinality symbol. */}
       <EndSemanticLabel
         markers={relation.source.semantics}
-        endpoint={route.sourceAttach}
-        tangent={route.sourceTangent}
+        endpoint={sourceAttach}
+        tangent={sourceTangent}
       />
       <EndSemanticLabel
         markers={relation.target.semantics}
-        endpoint={route.targetAttach}
-        tangent={route.targetTangent}
+        endpoint={targetAttach}
+        tangent={targetTangent}
       />
 
-      {/* Association-level semantic markers at the line's midpoint. */}
+      {/* Association-level semantic markers at线的中点. */}
       <AssociationSemanticLabel
         markers={relation.associationSemantics}
-        points={route.points}
+        points={linePoints}
       />
     </Group>
   );
@@ -158,23 +188,6 @@ function EndSemanticLabel({
   // Predominantly horizontal tangent → anchor left/right.
   // Predominantly vertical tangent → anchor top/bottom with center alignment.
   const BOX = 240;
-  const horizontal = Math.abs(tangent.x) >= Math.abs(tangent.y);
-  if (horizontal) {
-    const goingRight = tangent.x >= 0;
-    return (
-      <Text
-        x={goingRight ? ax : ax - BOX}
-        y={ay - 7}
-        width={BOX}
-        text={text}
-        align={goingRight ? 'left' : 'right'}
-        fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
-        fontSize={11}
-        fill="#515154"
-        listening={false}
-      />
-    );
-  }
   return (
     <Text
       x={ax - BOX / 2}

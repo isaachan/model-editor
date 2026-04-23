@@ -150,7 +150,11 @@ function isEditableTarget(target: EventTarget | null) {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
 }
 
+// 连结线预览状态
+interface RelationPreview { fromTypeId: string; mouse: Point | null; }
+
 export function Canvas() {
+  const [relationPreview, setRelationPreview] = useState<RelationPreview | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -253,6 +257,8 @@ export function Canvas() {
       }
 
       if (event.key === 'Escape' && !isEditableTarget(event.target)) {
+        setPendingRelationSource(null);
+        setRelationPreview(null);
         setTool('select');
       }
     };
@@ -493,6 +499,16 @@ export function Canvas() {
 
     if (marquee) {
       setMarquee((current) => (current ? { ...current, current: toWorldPoint(pointer) } : current));
+      return;
+    }
+
+    // 关键：relation模式下，预览线跟随鼠标
+    if (currentTool === 'relation' && pendingRelationSource) {
+      setRelationPreview((prev) =>
+        prev && prev.fromTypeId === pendingRelationSource
+          ? { ...prev, mouse: toWorldPoint(pointer) }
+          : { fromTypeId: pendingRelationSource, mouse: toWorldPoint(pointer) }
+      );
     }
   };
 
@@ -807,6 +823,29 @@ export function Canvas() {
             </Group>
           </Layer>
 
+          {/* 连结线预览线渲染 */}
+          {relationPreview && pendingRelationSource && (() => {
+            const fromType = typesById.get(relationPreview.fromTypeId);
+            if (!fromType) return null;
+            let from = {
+              x: fromType.layout.x + fromType.layout.width / 2,
+              y: fromType.layout.y + fromType.layout.height / 2,
+            };
+            let to = relationPreview.mouse || from;
+            return (
+              <Layer>
+                <Line
+                  points={[from.x, from.y, to.x, to.y]}
+                  stroke="#007aff"
+                  strokeWidth={2}
+                  dash={[8, 6]}
+                  listening={false}
+                  pointerEvents="none"
+                />
+              </Layer>
+            );
+          })()}
+
           {/* Type layer */}
           <Layer>
             <Group x={viewport.x} y={viewport.y} scaleX={viewport.scale} scaleY={viewport.scale}>
@@ -823,7 +862,19 @@ export function Canvas() {
                   draggable={typesDraggable}
                   onSelect={() => {
                     if (currentTool === 'relation') {
-                      handleTypeClickInRelationMode(el.id);
+                      // 连结线工具下，第一次点击 type 作为起点
+                      if (!pendingRelationSource) {
+                        setPendingRelationSource(el.id);
+                        setRelationPreview({ fromTypeId: el.id, mouse: null });
+                        select(el.id);
+                      } else {
+                        // 第二次点击（允许自关联）
+                        const created = addRelation(pendingRelationSource, el.id);
+                        setPendingRelationSource(null);
+                        setRelationPreview(null);
+                        setTool('select');
+                        if (created) select(created.id);
+                      }
                     } else if (currentTool === 'generalization') {
                       handleTypeClickInGeneralizationMode(el.id);
                     } else if (currentTool === 'shortSemantic') {

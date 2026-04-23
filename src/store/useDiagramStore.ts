@@ -270,7 +270,7 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     }),
 
   addRelation: (sourceTypeId, targetTypeId) => {
-    if (sourceTypeId === targetTypeId) return null;
+    // 允许自关联（self reference）
     const relation: RelationElement = {
       id: `rel-${nanoid(8)}`,
       type: 'relation',
