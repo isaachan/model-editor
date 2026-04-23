@@ -10,6 +10,7 @@ interface RelationLineProps {
   source: TypeElement;
   target: TypeElement;
   route: RoutingResult;
+  panModeActive?: boolean;
   selected: boolean;
   hovered: boolean;
   onSelect: () => void;
@@ -27,6 +28,7 @@ export function RelationLine({
   source: _source,
   target: _target,
   route,
+  panModeActive = false,
   selected,
   hovered,
   onSelect,
@@ -38,7 +40,7 @@ export function RelationLine({
   const handleMouseEnter = (e: KonvaEventObject<MouseEvent>) => {
     onHoverChange(true);
     const stage = e.target.getStage();
-    if (stage) stage.container().style.cursor = 'pointer';
+    if (stage) stage.container().style.cursor = panModeActive ? 'grab' : 'pointer';
   };
   const handleMouseLeave = (e: KonvaEventObject<MouseEvent>) => {
     onHoverChange(false);
@@ -46,6 +48,7 @@ export function RelationLine({
     if (stage) stage.container().style.cursor = '';
   };
   const handleClick = (e: KonvaEventObject<MouseEvent>) => {
+    if (panModeActive || e.evt.button === 1) return;
     e.cancelBubble = true;
     onSelect();
   };

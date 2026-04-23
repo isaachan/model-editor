@@ -1,4 +1,18 @@
+import { useDiagramStore } from '@/store/useDiagramStore';
+import { useEditorStore } from '@/store/useEditorStore';
+
 export function Toolbar() {
+  const selectedIds = useEditorStore((s) => s.selectedIds);
+  const deselectAll = useEditorStore((s) => s.deselectAll);
+  const resetViewport = useEditorStore((s) => s.resetViewport);
+  const deleteElements = useDiagramStore((s) => s.deleteElements);
+
+  const handleDelete = () => {
+    if (selectedIds.length === 0) return;
+    deleteElements(selectedIds);
+    deselectAll();
+  };
+
   return (
     <header
       className="flex h-12 items-center gap-2 border-b px-4"
@@ -16,6 +30,9 @@ export function Toolbar() {
 
       <Divider />
 
+      <ToolbarButton label="Delete" onClick={handleDelete} disabled={selectedIds.length === 0} />
+      <ToolbarButton label="Reset View" onClick={resetViewport} />
+
       <div
         className="ml-auto flex items-center text-sm"
         style={{ color: 'var(--color-text-secondary)' }}
@@ -32,11 +49,20 @@ function Divider() {
   );
 }
 
-function ToolbarButton({ label, disabled }: { label: string; disabled?: boolean }) {
+function ToolbarButton({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <button
       type="button"
       disabled={disabled}
+      onClick={onClick}
       className="rounded-[10px] px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
       style={{ color: 'var(--color-text-primary)' }}
     >

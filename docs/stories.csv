@@ -17,11 +17,11 @@ ME-015,Done,As a 建模者，我 want 在右侧属性面板看到关系线的基
 ME-016,Done,As a 建模者，我 want 设置关系线source端的基数，so that 我可以表达对端的约束,High,Business Story,支持设置关系线起点端的基数标注,- 属性面板中source端基数有下拉选项/n- 支持选择后关系线上起点端显示对应的基数符号/n- 支持的基数类型包括：[1,1]、[0,1]、[1,*]、[0,*]等/n- 基数标注位置正确，不与其他元素重叠
 ME-017,Done,As a 建模者，我 want 设置关系线target端的基数，so that 我可以表达另一端的约束,High,Business Story,支持设置关系线终点端的基数标注,- 属性面板中target端基数有下拉选项/n- 选择后关系线上终点端显示对应的基数符号/n- 支持的基数类型与source端相同/n- 两端基数标注位置正确，不与其他元素重叠
 ME-018,Done,As a 建模者，我 want 拖拽移动Type节点时关系线自动跟随，so that 图表布局保持一致性,High,Business Story,移动节点时连线自动重绘,- 拖拽移动Type节点时，所有连接到该节点的关系线自动更新路径/n- 连线两端始终附着在Type节点边框上/n- 更新过程流畅，无明显卡顿
-ME-019,Backlog,As a 建模者，我 want 删除选中的元素，so that 我可以纠正错误的创建,High,Business Story,支持删除选中的Type节点或关系线,- 选中元素后按Delete键可删除/n- 选中元素后点击工具栏删除按钮可删除/n- 删除Type节点后，连接到该节点的所有关系线也一并删除/n- 删除操作可撤销（后续实现）
-ME-020,Backlog,As a 建模者，我 want 框选多个元素，so that 我可以同时操作多个元素,High,Business Story,支持拖拽框选,- 在画布空白处按住鼠标拖拽出现选框/n- 选框内的所有元素被同时选中/n- 选中多个元素后可统一进行后续实现
-ME-021,Backlog,As a 建模者，我 want 缩放画布，so that 我可以在不同尺寸下查看大图,High,Business Story,支持鼠标滚轮缩放,- 支持鼠标滚轮缩放画布/n- 缩放范围至少25% ~ 400%/n- 缩放以鼠标光标位置为中心/n- 缩放操作流畅，无明显卡顿
-ME-022,Backlog,As a 建模者，我 want 平移画布，so that 我可以查看图表的不同区域,High,Business Story,支持按住鼠标拖拽平移,- 按住空格键或鼠标中键拖拽可以平移画布/n- 平移操作流畅，无明显卡顿
-ME-023,Backlog,As a 建模者，我 want 重置视图，so that 我可以快速回到默认视图,High,Business Story,支持重置到100%缩放并居中,- 工具栏有重置视图按钮/n- 点击按钮后画布缩放重置为100%并居中显示/n- 双击画布空白处也可重置视图可选
+ME-019,Done,As a 建模者，我 want 删除选中的元素，so that 我可以纠正错误的创建,High,Business Story,支持删除选中的Type节点或关系线,- 选中元素后按Delete键可删除/n- 选中元素后点击工具栏删除按钮可删除/n- 删除Type节点后，连接到该节点的所有关系线也一并删除/n- 删除操作可撤销（后续实现）
+ME-020,Done,As a 建模者，我 want 框选多个元素，so that 我可以同时操作多个元素,High,Business Story,支持拖拽框选,- 在画布空白处按住鼠标拖拽出现选框/n- 选框内的所有元素被同时选中/n- 选中多个元素后可统一进行后续实现
+ME-021,Done,As a 建模者，我 want 缩放画布，so that 我可以在不同尺寸下查看大图,High,Business Story,支持鼠标滚轮缩放,- 支持鼠标滚轮缩放画布/n- 缩放范围至少25% ~ 400%/n- 缩放以鼠标光标位置为中心/n- 缩放操作流畅，无明显卡顿
+ME-022,Done,As a 建模者，我 want 平移画布，so that 我可以查看图表的不同区域,High,Business Story,支持按住鼠标拖拽平移,- 按住空格键或鼠标中键拖拽可以平移画布/n- 平移操作流畅，无明显卡顿
+ME-023,Done,As a 建模者，我 want 重置视图，so that 我可以快速回到默认视图,High,Business Story,支持重置到100%缩放并居中,- 工具栏有重置视图按钮/n- 点击按钮后画布缩放重置为100%并居中显示/n- 双击画布空白处也可重置视图可选
 ME-024,Backlog,As a 建模者，我 want 撤销我的上一步操作，so that 我可以回滚错误操作,High,Business Story,支持撤销功能,- 每一个对图表的修改操作都记录在历史栈中/n- 工具栏有撤销按钮/n- 点击撤销按钮或按Ctrl+Z可以撤销上一步操作/n- 撤销后图表恢复到上一步状态/n- 没有可撤销操作时按钮置灰
 ME-025,Backlog,As a 建模者，我 want 重做被撤销的操作，so that 我可以恢复之前的修改,High,Business Story,支持重做功能,- 工具栏有重做按钮/n- 点击重做按钮或按Ctrl+Y可以重做上一步被撤销的操作/n- 重做后图表恢复到撤销前状态/n- 没有可重做操作时按钮置灰/n- 执行新操作后清除当前撤销位置之后的历史记录
 ME-026,Backlog,As a 建模者，我 want 创建新图表，so that 我可以开始一张新的建模,High,Business Story,工具栏有新建按钮,- 工具栏有新建图表按钮/n- 点击新建按钮后清空画布上所有元素/n- 新建前如果当前图表有未保存更改时提示确认可选

@@ -29,6 +29,7 @@ interface DiagramState {
   ) => void;
 
   deleteElement: (id: string) => void;
+  deleteElements: (ids: string[]) => void;
   clearAll: () => void;
 }
 
@@ -139,6 +140,30 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
+
+  deleteElements: (ids) =>
+    set((s) => {
+      const idSet = new Set(ids);
+      const typeIdsToDelete = new Set(
+        s.elements
+          .filter((el) => el.type === 'type' && idSet.has(el.id))
+          .map((el) => el.id),
+      );
+
+      return {
+        elements: s.elements.filter((el) => {
+          if (idSet.has(el.id)) return false;
+          if (
+            el.type === 'relation' &&
+            (typeIdsToDelete.has(el.source.typeId) || typeIdsToDelete.has(el.target.typeId))
+          ) {
+            return false;
+          }
+          return true;
+        }),
+        metadata: { ...s.metadata, updatedAt: now() },
+      };
+    }),
 
   clearAll: () =>
     set((s) => ({

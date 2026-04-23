@@ -9,6 +9,7 @@ interface TypeNodeProps {
   hovered: boolean;
   /** Highlight as pending source during relation-creation. */
   pendingSource?: boolean;
+  panModeActive?: boolean;
   draggable: boolean;
   onSelect: () => void;
   onHoverChange: (hovered: boolean) => void;
@@ -21,6 +22,7 @@ export function TypeNode({
   selected,
   hovered,
   pendingSource = false,
+  panModeActive = false,
   draggable,
   onSelect,
   onHoverChange,
@@ -45,18 +47,21 @@ export function TypeNode({
       y={layout.y}
       draggable={draggable}
       onMouseDown={(e) => {
+        if (panModeActive || e.evt.button === 1) return;
         // Prevent stage-level deselect when clicking the node body
         e.cancelBubble = true;
         onSelect();
       }}
       onTap={(e) => {
+        if (panModeActive) return;
         e.cancelBubble = true;
         onSelect();
       }}
       onMouseEnter={(e) => {
         onHoverChange(true);
         const stage = e.target.getStage();
-        if (stage && draggable) stage.container().style.cursor = 'move';
+        if (stage && panModeActive) stage.container().style.cursor = 'grab';
+        else if (stage && draggable) stage.container().style.cursor = 'move';
       }}
       onMouseLeave={(e) => {
         onHoverChange(false);
