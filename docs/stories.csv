@@ -52,3 +52,4 @@ ME-050,Backlog,As a 建模者，我 want 用键盘方向键微调选中元素的
 ME-051,Backlog,As a 建模者，我 want 左侧工具栏采用极简风格（参考 docs/ux_prototype/short-semantic-preview.html），so that 视觉更清爽、与整体 UI 风格统一,Low,Business Story,将左侧工具栏图标替换为极简风格,- 左侧工具栏的所有工具图标替换为 short-semantic-preview.html 中的极简线条风格/n- 图标尺寸、颜色、hover/active 状态与原型一致/n- 选中状态的视觉反馈与原型一致/n- tooltip 文案保留不变/n- 不影响现有工具的点击交互与键盘快捷键
 ME-052,Defect,按下export png的按钮后，没有反应,High,Defect,,导出PNG时点击按钮无任何反馈，未生成图片文件
 ME-053,Defect,export的svg图片是错的，基数标识都不对,High,Defect,,导出的SVG图片内容错误，关系线基数标识显示不正确
+ME-054,Backlog,As a 建模者，我 want 通过拖拽的方式创建关系线，so that 连线过程更直观、可视化,High,Business Story,选中关系线工具后，点击 source type 并按住鼠标，拖动鼠标，线的另一端跟随鼠标移动，移动到任意 type（包括自身）边缘时高亮提示，松开鼠标即生成连线,- 选中关系线工具后，点击 source type 并按住鼠标/n- 拖动鼠标时，画布上出现一条动态连线，终点跟随鼠标/n- 拖动到任意 type（包括自身）边缘时有高亮吸附提示/n- 松开鼠标时，若在 type 上则生成连线，否则不生成/n- 支持创建自关联（source=target）/n- 连线生成后自动切换为选择工具/n- 交互流畅，无明显延迟或卡顿
