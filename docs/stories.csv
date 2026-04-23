@@ -1,17 +1,45 @@
 ID,Status,User Story,Priority,Type,Remark,Acceptance Condition
 ME-001,Done,As a 技术 story，我want 定义图表元数据的 JSON Schema，so that 图表可以被正确导入导出和持久化存储,High,Technical Task,Schema 分为两部分：模型语义部分只包含类型、关系、约束等业务信息；渲染布局部分包含坐标、大小、位置等可视化信息。两部分分离存储,- JSON Schema 定义完整，覆盖第一阶段所有元素类型（Type、关系线、泛化容器、短语义、长语义等）/n- 模型语义信息和渲染布局信息明确分离，便于后续纯语义数据导出/n- Schema 支持向后兼容，为后续版本扩展预留空间/n- 提供 Schema 文档说明，便于开发和后续维护/n- 示例 JSON 可以被 JSON Schema 验证工具正确验证
-ME-002,Backlog,As a 技术 story，我 want 建立项目脚手架，so that 开发可以开始进行,High,Technical Task,创建前端项目骨架，配置好构建工具、依赖、目录结构,- 项目可以通过 npm install 安装依赖/n- 项目可以通过 npm start 启动本地开发服务器/n- 项目可以通过 npm run build 构建生产版本，输出到构建目录/n- 目录结构清晰，分离源码、资源、构建产物/n- 配置基础代码质量检查工具（ESLint 等）
-ME-003,Backlog,As a 建模者，我want 能够缩放和平移画布，so that 我可以在不同尺寸下查看和编辑大图,High,Business Story,提供画布基础操作能力，包括缩放、平移、重置视图，这是所有绘图操作的基础,- 支持鼠标滚轮缩放画布，缩放范围至少 25% ~ 400%/n- 支持按住鼠标拖拽平移画布/n- 支持双击或按钮点击重置视图到 100% 并居中/n- 缩放和平移操作流畅，无明显卡顿
-ME-004,Backlog,As a 建模者，我want 能够创建 Type 节点，so that 我可以在图中表示领域概念,High,Business Story,Type 是Martin Fowler符号体系中的核心元素，用矩形方块表示，内部只需要显示名称,- 可以通过界面操作（点击/拖放）在画布任意位置创建 Type 节点/n- Type 节点显示为实心矩形边框，内部居中显示类型名称文本/n- 可以修改已创建 Type 节点的名称/n- Type 节点大小可根据文本长度自适应调整，或支持手动调整大小
-ME-005,Backlog,As a 建模者，我want 能够在两个 Type 之间创建关系并标注基数，so that 我可以表达类型之间的关联约束,High,Business Story,这是该建模方法的核心特征，连线两端都需要标注基数，支持所有定义好的基数符号。参考：docs/cardinality.png,"- 可以通过连接工具在两个 Type 节点之间创建关系连线/n- 连线为实线，可以调整路径/n- 连线两端都必须能独立设置基数标注/n- 支持所有 8 种基数标注：[1,1]、[0,1]、[1,*]、[0,*]、[2,*]、[n,m]、Unknown(?)、No mapping(X)/n- 支持在关系线上添加 / 斜杠表示派生映射/n- 基数标注图形正确显示，位置清晰不与其他元素重叠"
-ME-006,Backlog,As a 建模者，我want 能够创建类型泛化划分，so that 我可以表达父类和子类之间的分类关系,High,Business Story,父类型连接到一个容器框，容器框内包含多个子类型，容器框底线区分完整划分和不完整划分。参考：docs/TypeGeneralization.png,- 可以创建泛化划分容器框，通过直线连接到父 Type/n- 容器框内部可以创建多个子 Type 节点/n- 支持两种划分类型：完整划分（容器底部双水平线）、不完整划分（容器底部单水平线）/n- 支持一个父类型同时连接多个划分容器/n- 支持子类进一步划分，形成多层递归结构
-ME-007,Backlog,As a 建模者，我want 能够添加短语义陈述，so that 我可以为类型或关系附加简短约束标记,High,Business Story,使用方括号 [marker] 标注在类型框顶部或关系线上，支持所有预定义的短语义标记,"- 可以为 Type 节点添加短语义陈述，显示在类型框顶部/n- 可以为关系线添加短语义陈述，显示在关系线旁/n- 支持所有预定义标记：abstract, immutable/imm, singleton, list, class, key, [n1,n2], hierarchy, Dag, multiple hierarchies, historic/n- 语义标记使用方括号包裹，格式正确"
-ME-008,Backlog,As a 建模者，我want 能够添加长语义陈述便签，so that 我可以详细描述复杂的业务规则,High,Business Story,使用折角便签符号，支持按标题分类：Constraint、Derivation、Instances、Method、Note、Overload。参考：docs/SemanticStatements.png,"- 可以在画布任意位置创建长语义陈述便签/n- 便签显示为折角（右上角折起）矩形样式/n- 支持选择标题类型：Constraint, Derivation, Instances, Method, Note, Overload/n- 标题显示在便签顶部加粗，内容区域可输入多行文本/n- 便签可以附加连接到类型或关系线上，也可以独立存在"
-ME-009,Backlog,As a 建模者，我want 能够删除选中的元素，so that 我可以纠正错误的创建,High,Business Story,支持选中单个或多个元素后删除,- 支持点击选中单个元素/n- 支持框选选中多个元素/n- 选中元素后按 Delete 键或点击删除按钮可删除/n- 删除元素后，相关连接关系也一并移除
-ME-010,Backlog,As a 建模者，我want 能够清空整个画布，so that 我可以重新开始一张新图,High,Business Story,提供清空画布功能，需要二次确认防止误操作,- 界面有清空画布的操作入口/n- 点击清空后弹出确认对话框，防止误操作/n- 确认后清空画布上所有元素，恢复到空白状态
-ME-011,Backlog,As a 建模者，我want 能够使用拖放来调整元素位置，so that 我可以重新布局图表,High,Business Story,支持拖放调整单个元素位置，关系线自动跟随重绘,- 可以按住鼠标拖拽任意元素移动/n- 移动过程中元素跟随鼠标光标实时更新位置/n- 元素移动后，连接到该元素的所有关系线自动重绘路径/n- 拖放操作流畅，无明显滞后
-ME-012,Backlog,As a 建模者，我want 能够撤销/重做我的操作，so that 我可以方便地回滚错误操作,High,Business Story,维护操作历史栈，支持撤销和重做,- 每一个对图表的修改操作都记录在历史栈中/n- 支持撤销操作，撤销后恢复到上一步状态/n- 支持重做操作，重做后恢复到撤销前状态/n- 新操作执行后，清除当前撤销位置之后的历史记录
-ME-013,Backlog,As a 建模者，我want 能够将图表保存到浏览器本地存储，so that 我下次打开可以继续编辑,High,Business Story,第一阶段使用 localStorage 存储单张图表，自动保存,- 每次修改后自动保存图表数据到浏览器 localStorage/n- 刷新页面重新打开后，自动加载上次保存的图表内容/n- 保存和加载过程正确，数据不丢失/n- 单张图表数据不超过 localStorage 大小限制
-ME-014,Backlog,As a 建模者，我want 能够将图表导出为 SVG 格式，so that 我可以在其他文档中使用矢量图,Middle,Business Story,导出当前画布内容为SVG文件，保留所有元素和样式,- 提供导出 SVG 按钮，点击后下载 .svg 文件/n- 导出的 SVG 文件包含画布上所有可见元素，样式正确/n- SVG 为矢量格式，可以无限缩放不失真/n- 导出文件大小符合 500KB 限制
-ME-015,Backlog,As a 建模者，我want 能够将图表导出为 PNG 格式，so that 我可以方便地分享给他人,Middle,Business Story,导出当前画布内容为PNG图片，支持不同分辨率,- 提供导出 PNG 按钮，点击后下载 .png 文件/n- 导出的 PNG 图片包含画布上所有可见元素，样式正确/n- 支持至少 1x、2x 分辨率选项/n- 导出�� 5 秒内完成
-ME-016,Backlog,As a 技术 story，我want 实现网格和吸附对齐功能，so that 用户可以画出整齐的图表,Middle,Technical Task,显示背景网格，移动元素时自动吸附到网格线,- 画布背景显示均匀网格线/n- 可以开关网格显示/n- 移动元素时，元素边缘自动吸附到最近的网格线交点/n- 网格间距可配置（默认如 10px 或 20px）
+ME-002,Backlog,As a 技术 story，我 want 建立项目脚手架，so that 开发可以开始进行,High,Technical Task,创建前端项目骨架，配置好构建工具、依赖、基础目录结构,- 项目可以通过 npm install 安装依赖/n- 项目可以通过 npm start 启动本地开发服务器/n- 项目可以通过 npm run build 构建生产版本，输出到构建目录/n- 目录结构清晰，分离源码、资源、构建产物/n- 配置基础代码质量检查工具（ESLint 等）
+ME-003,Backlog,As a 建模者，我 want 看到基本页面布局，so that 我可以在统一的界面中进行所有建模操作,High,Business Story,实现四栏式基础布局，这是所有后续功能的界面基础,- 页面分为四个区域：顶部工具栏、左侧元素选择栏、中间绘图区、右侧属性配置栏/n- 顶部工具栏区域预留new/save/undo/redo等按钮位置/n- 左侧栏显示可用的建模元素列表/n- 中间区域是画布背景/n- 右侧栏显示属性配置区域/n- 底部状态栏显示当前状态信息/n- 各区域布局合理，无明显的视觉混乱
+ME-004,Backlog,As a 技术 story，我 want 集成Canvas绘图库到项目中，so that 后续绘图功能可以基于此实现,High,Technical Task,选择并集成合适的Canvas绘图库（Paper.js/Fabric.js等）- 绘图库成功集成到项目中/n- 可以在中间画布区域绘制基本图形（矩形、线条、文本）/n- 绘图库支持元素选择、拖拽等基本操作/n- 集成方案文档记录选型理由和使用方法
+ME-005,Backlog,As a 建模者，我 want 在左侧工具栏看到Type元素选项，so that 我可以选择它来创建类型节点,High,Business Story,左侧工具栏第一个元素就是Type工具,- 左侧工具栏显示"Type"图标或按钮/n- 鼠标悬停有tooltip显示"创建类型节点"/n- 点击Type按钮后进入创建状态有视觉反馈（高亮/选中状态）
+ME-006,Backlog,As a 建模者，我 want 在画布上点击创建Type节点，so that 我可以在图中表示领域概念,High,Business Story,选中Type工具后在画布点击即可创建,- 选中Type工具后，鼠标在画布上变成十字光标/n- 在画布任意位置点击即可创建一个Type节点/n- Type节点显示为矩形边框/n- 新创建的Type节点默认名称为"Type"/n- 创建后自动退出Type创建模式或保持连续创建模式
+ME-007,Backlog,As a 建模者，我 want 看到Type节点显示名称，so that 我可以识别不同的类型,High,Business Story,Type节点内部居中显示类型名称文本,- Type节点显示为实心矩形边框/n- 内部居中显示类型名称文本/n- 文本大小适中，可读性好/n- 矩形大小根据文本长度自适应调整
+ME-008,Backlog,As a 建模者，我 want 点击选中画布上的Type节点，so that 我可以对其进行后续操作,High,Business Story,支持点击选择单个Type节点,- 鼠标移动到Type节点上有hover视觉反馈/n- 点击Type节点后该节点被选中/n- 选中状态有明显的视觉标识（如高亮边框、控制点）/n- 点击画布空白处可以取消选中
+ME-009,Backlog,As a 建模者，我 want 拖拽移动画布上的Type节点，so that 我可以调整其在图表中的位置,High,Business Story,支持拖拽调整Type节点位置,- 选中Type节点后按住鼠标可以拖拽移动/n- 移动过程中节点跟随鼠标光标实时更新位置/n- 释放鼠标后节点停留在新位置/n- 拖拽操作流畅，无明显滞后
+ME-010,Backlog,As a 建模者，我 want 在右侧属性面板看到选中Type的名称，so that 我可以查看当前选中元素的属性,High,Business Story,选中Type后右侧面板显示其名称属性,- 选中Type节点后，右侧属性面板显示该节点的属性/n- 属性面板显示"名称"字段和当前值/n- 未选中任何元素时属性面板显示空状态提示
+ME-011,Backlog,As a 建模者，我 want 在右侧属性面板修改Type的名称，so that 我可以为类型命名有意义的名字,High,Business Story,支持在属性面板编辑Type名称,- 属性面板中的名称字段是可编辑的输入框/n- 修改名称后按回车或失焦自动保存/n- Type节点上的显示名称同步更新/n- 支持中文/英文名称都能正确显示
+ME-012,Backlog,As a 建模者，我 want 在左侧工具栏看到关系线工具选项，so that 我可以选择它来创建类型之间的关系,High,Business Story,左侧工具栏显示关系线工具,- 左侧工具栏显示"关系线"图标或按钮/n- 鼠标悬停有tooltip显示"创建两个Type之间的关系连线"/n- 点击关系线按钮后进入创建关系线创建模式
+ME-013,Backlog,As a 建模者，我 want 在两个Type节点之间创建关系连线，so that 我可以表达类型之间的关联,High,Business Story,使用关系线工具连接两个Type,- 选中关系线工具后，先点击起点Type，再点击终点Type/n- 两个Type之间创建一条实线连接/n- 连线路径自动计算，视觉上清晰美观/n- 创建后连线两端附着在Type节点边框上
+ME-014,Backlog,As a 建模者，我 want 点击选中画布上的关系线，so that 我可以对其进行后续操作,High,Business Story,支持点击选择关系线,- 鼠标移动到关系线上有hover视觉反馈/n- 点击关系线后该连线被选中/n- 选中状态有明显的视觉标识（如高亮颜色变化）/n- 点击画布空白处可以取消选中
+ME-015,Backlog,As a 建模者，我 want 在右侧属性面板看到关系线的基数选项，so that 我可以配置关系的约束,High,Business Story,选中关系线后右侧面板显示基数属性,- 选中关系线后，右侧属性面板显示该连线的属性/n- 显示source端（起点）基数选项/n- 显示target端（终点）基数选项
+ME-016,Backlog,As a 建模者，我 want 设置关系线source端的基数，so that 我可以表达对端的约束,High,Business Story,支持设置关系线起点端的基数标注,- 属性面板中source端基数有下拉选项/n- 支持选择后关系线上起点端显示对应的基数符号/n- 支持的基数类型包括：[1,1]、[0,1]、[1,*]、[0,*]等/n- 基数标注位置正确，不与其他元素重叠
+ME-017,Backlog,As a 建模者，我 want 设置关系线target端的基数，so that 我可以表达另一端的约束,High,Business Story,支持设置关系线终点端的基数标注,- 属性面板中target端基数有下拉选项/n- 选择后关系线上终点端显示对应的基数符号/n- 支持的基数类型与source端相同/n- 两端基数标注位置正确，不与其他元素重叠
+ME-018,Backlog,As a 建模者，我 want 拖拽移动Type节点时关系线自动跟随，so that 图表布局保持一致性,High,Business Story,移动节点时连线自动重绘,- 拖拽移动Type节点时，所有连接到该节点的关系线自动更新路径/n- 连线两端始终附着在Type节点边框上/n- 更新过程流畅，无明显卡顿
+ME-019,Backlog,As a 建模者，我 want 删除选中的元素，so that 我可以纠正错误的创建,High,Business Story,支持删除选中的Type节点或关系线,- 选中元素后按Delete键可删除/n- 选中元素后点击工具栏删除按钮可删除/n- 删除Type节点后，连接到该节点的所有关系线也一并删除/n- 删除操作可撤销（后续实现）
+ME-020,Backlog,As a 建模者，我 want 框选多个元素，so that 我可以同时操作多个元素,High,Business Story,支持拖拽框选,- 在画布空白处按住鼠标拖拽出现选框/n- 选框内的所有元素被同时选中/n- 选中多个元素后可统一进行后续实现
+ME-021,Backlog,As a 建模者，我 want 缩放画布，so that 我可以在不同尺寸下查看大图,High,Business Story,支持鼠标滚轮缩放,- 支持鼠标滚轮缩放画布/n- 缩放范围至少25% ~ 400%/n- 缩放以鼠标光标位置为中心/n- 缩放操作流畅，无明显卡顿
+ME-022,Backlog,As a 建模者，我 want 平移画布，so that 我可以查看图表的不同区域,High,Business Story,支持按住鼠标拖拽平移,- 按住空格键或鼠标中键拖拽可以平移画布/n- 平移操作流畅，无明显卡顿
+ME-023,Backlog,As a 建模者，我 want 重置视图，so that 我可以快速回到默认视图,High,Business Story,支持重置到100%缩放并居中,- 工具栏有重置视图按钮/n- 点击按钮后画布缩放重置为100%并居中显示/n- 双击画布空白处也可重置视图可选
+ME-024,Backlog,As a 建模者，我 want 撤销我的上一步操作，so that 我可以回滚错误操作,High,Business Story,支持撤销功能,- 每一个对图表的修改操作都记录在历史栈中/n- 工具栏有撤销按钮/n- 点击撤销按钮或按Ctrl+Z可以撤销上一步操作/n- 撤销后图表恢复到上一步状态/n- 没有可撤销操作时按钮置灰
+ME-025,Backlog,As a 建模者，我 want 重做被撤销的操作，so that 我可以恢复之前的修改,High,Business Story,支持重做功能,- 工具栏有重做按钮/n- 点击重做按钮或按Ctrl+Y可以重做上一步被撤销的操作/n- 重做后图表恢复到撤销前状态/n- 没有可重做操作时按钮置灰/n- 执行新操作后清除当前撤销位置之后的历史记录
+ME-026,Backlog,As a 建模者，我 want 创建新图表，so that 我可以开始一张新的建模,High,Business Story,工具栏有新建按钮,- 工具栏有新建图表按钮/n- 点击新建按钮后清空画布上所有元素/n- 新建前如果当前图表有未保存更改时提示确认可选
+ME-027,Backlog,As a 建模者，我 want 图表自动保存到浏览器本地存储，so that 我下次打开可以继续编辑,High,Business Story,使用localStorage存储单张图表,- 每次修改后延迟几秒后自动保存图表数据到浏览器localStorage/n- 刷新页面重新打开后自动加载上次保存的图表内容/n- 保存和加载过程正确，数据不丢失/n- 单张图表数据不超过localStorage大小限制
+ME-028,Backlog,As a 建模者，我 want 在左侧工具栏看到泛化容器工具选项，so that 我可以选择它来创建类型泛化关系,High,Business Story,左侧工具栏显示泛化容器工具,- 左侧工具栏显示"泛化划分"图标或按钮/n- 鼠标悬停有tooltip显示"创建类型泛化划分容器"/n- 点击按钮后进入泛化容器创建模式
+ME-029,Backlog,As a 建模者，我 want 创建泛化划分容器框，so that 我可以表达父类和子类的分类关系,High,Business Story,可以创建泛化容器框并连接到父Type,- 选中泛化容器工具后在画布点击创建容器框/n- 容器框显示为矩形/n- 可以将容器框连接到一个父Type节点/n- 连接线从父Type指向容器框
+ME-030,Backlog,As a 建模者，我 want 在泛化容器内创建子Type，so that 我可以表示分类中的子类型,High,Business Story,容器框内部可以包含多个子Type节点,- 可以在泛化容器框内部创建Type节点/n- 子Type节点视觉上位于容器框内部/n- 移动容器框时内部的子Type一起移动
+ME-031,Backlog,As a 建模者，我 want 设置泛化划分的类型完整/不完整，so that 我可以表达划分的性质,High,Business Story,支持两种划分类型的视觉区分,- 选中泛化容器后右侧属性面板显示划分类型选项/n- 完整划分显示为容器底部双水平线/n- 不完整划分显示为容器底部单水平线/n- 默认创建的是不完整划分
+ME-032,Backlog,As a 建模者，我 want 在左侧工具栏看到短语义工具选项，so that 我可以选择它来添加短语义标记,High,Business Story,左侧工具栏显示短语义工具,- 左侧工具栏显示"短语义"图标或按钮/n- 鼠标悬停有tooltip显示"添加短语义陈述标记"/n- 点击按钮后进入短语义创建模式
+ME-033,Backlog,As a 建模者，我 want 为Type节点添加短语义陈述，so that 我可以为类型附加简短约束标记,High,Business Story,短语义显示在Type框顶部,- 选中短语义工具后点击Type节点即可添加/n- 短语义标记使用方括号包裹显示在Type框顶部/n- 支持选择预定义的标记类型abstract/immutable/singleton等
+ME-034,Backlog,As a 建模者，我 want 为关系线添加短语义陈述，so that 我可以为关系附加简短约束标记,High,Business Story,短语义显示在关系线旁,- 选中短语义工具后点击关系线即可添加/n- 短语义标记使用方括号包裹显示在关系线旁/n- 支持选择预定义的标记类型list/class/key/hierarchy等
+ME-035,Backlog,As a 建模者，我 want 在左侧工具栏看到长语义便签工具选项，so that 我可以选择它来添加详细的业务规则说明,High,Business Story,左侧工具栏显示长语义便签工具,- 左侧工具栏显示"长语义"图标或按钮/n- 鼠标悬停有tooltip显示"添加长语义陈述便签"/n- 点击按钮后进入长语义便签创建模式
+ME-036,Backlog,As a 建模者，我 want 在画布上创建长语义陈述便签，so that 我可以详细描述复杂的业务规则,High,Business Story,便签显示为折角矩形样式,- 选中长语义工具后在画布任意位置点击创建便签/n- 便签显示为右上角折起的矩形样式/n- 便签顶部显示标题，内容区域可输入多行文本
+ME-037,Backlog,As a 建模者，我 want 选择长语义便签的标题类型，so that 我可以按分类组织不同类型的语义陈述,High,Business Story,支持6种标题类型,- 选中便签后右侧属性面板显示标题类型下拉选项/n- 支持选择标题类型包括：Constraint, Derivation, Instances, Method, Note, Overload/n- 标题显示在便签顶部加粗/n- 不同标题类型可使用不同颜色区分可选
+ME-038,Backlog,As a 建模者，我 want 将长语义便签附加到Type或关系线上，so that 我可以明确说明针对的对象,High,Business Story,便签可以附加连接到其他元素,- 支持拖拽便签到Type节点或关系线上进行附着/n- 附着后便签与目标元素之间有虚线连接/n- 移动目标元素时便签一起移动可选
+ME-039,Backlog,As a 建模者，我 want 看到画布背景显示网格，so that 我可以画出整齐的图表,High,Business Story,画布背景显示均匀网格线,- 画布背景显示浅色均匀网格线/n- 网格间距可配置（默认20px）/n- 网格线不干扰正常绘图操作/n- 可以在设置中开关网格显示
+ME-040,Backlog,As a 建模者，我 want 移动元素时自动吸附到网格，so that 图表元素对齐整齐,High,Business Story,支持网格吸附功能,- 移动元素时，元素边缘自动吸附到最近的网格线交点/n- 吸附时有轻微的视觉反馈/n- 可以在设置中开关吸附功能
+ME-041,Backlog,As a 建模者，我 want 将图表导出为SVG格式，so that 我可以在其他文档中使用矢量图,Middle,Business Story,导出当前画布内容为SVG文件,- 工具栏有导出SVG按钮/n- 点击按钮后下载.svg文件/n- 导出的SVG文件包含画布上所有可见元素，样式正确/n- SVG为矢量格式，可以无限缩放不失真/n- 导出文件大小符合500KB限制
+ME-042,Backlog,As a 建模者，我 want 将图表导出为PNG格式，so that 我可以方便地分享给他人,Middle,Business Story,导出当前画布内容为PNG图片,- 工具栏有导出PNG按钮/n- 点击按钮后下载.png文件/n- 导出的PNG图片包含画布上所有可见元素，样式正确/n- 支持至少1x、2x分辨率选项/n- 导出在5秒内完成
+ME-043,Backlog,As a 建模者，我 want 清空整个画布，so that 我可以重新开始一张新图,Middle,Business Story,提供清空画布功能,- 工具栏有清空画布按钮/n- 点击清空后弹出确认对话框，防止误操作/n- 确认后清空画布上所有元素，恢复到空白状态
+ME-044,Backlog,As a 技术 story，我 want 实现操作历史栈基础框架，so that 撤销重做功能可以基于此实现,High,Technical Task,设计并实现历史记录机制,- 定义操作历史的数据结构/n- 实现push/undo/redo基本方法/n- 历史栈大小有上限限制（如100步）/n- 集成到主应用中
