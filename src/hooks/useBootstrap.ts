@@ -4,7 +4,6 @@ import { useHistoryStore, type DiagramSnapshot } from '@/store/useHistoryStore';
 import { useFilesStore } from '@/store/useFilesStore';
 import type { DiagramElement, DiagramMetadata } from '@/models/diagram';
 
-const HISTORY_DEBOUNCE_MS = 400;
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
 interface SnapshotSource {
@@ -44,30 +43,16 @@ export function useBootstrap(): void {
     //    so the initial replaceContent doesn't fire a save of its own.
     useFilesStore.getState().bootstrap();
 
-    // 2. History integration: remember the pre-change snapshot and push
-    //    it after the user pauses (so continuous drags collapse to one
-    //    history entry).
-    let pendingPrev: DiagramSnapshot | null = null;
-    let historyTimer: ReturnType<typeof setTimeout> | null = null;
-
+    // 2. History integration: hand off the pre-change snapshot to the store,
+    //    which debounces / coalesces and commits to the past stack.
     const historyUnsub = useDiagramStore.subscribe((next, prev) => {
       if (!hasContentChanged(prev, next)) return;
-      if (useHistoryStore.getState().isApplyingHistory) {
-        pendingPrev = null;
-        if (historyTimer) clearTimeout(historyTimer);
-        historyTimer = null;
-        return;
-      }
-      if (pendingPrev == null) pendingPrev = snapshotOf(prev);
-      if (historyTimer) clearTimeout(historyTimer);
-      historyTimer = setTimeout(() => {
-        if (pendingPrev) useHistoryStore.getState().push(pendingPrev);
-        pendingPrev = null;
-        historyTimer = null;
-      }, HISTORY_DEBOUNCE_MS);
+      if (useHistoryStore.getState().isApplyingHistory) return;
+      useHistoryStore.getState().schedulePush(snapshotOf(prev));
     });
 
-    // 3. Auto-save to localStorage (debounced, skipped while applying history).
+    // 3. Auto-save to localStorage (debounced, skipped while applying history —
+    //    undo/redo / file-load trigger persistence explicitly).
     let saveTimer: ReturnType<typeof setTimeout> | null = null;
     const saveUnsub = useDiagramStore.subscribe((next, prev) => {
       if (!hasContentChanged(prev, next)) return;
@@ -82,7 +67,6 @@ export function useBootstrap(): void {
     return () => {
       historyUnsub();
       saveUnsub();
-      if (historyTimer) clearTimeout(historyTimer);
       if (saveTimer) clearTimeout(saveTimer);
     };
   }, []);

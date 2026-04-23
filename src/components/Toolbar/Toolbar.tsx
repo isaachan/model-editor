@@ -2,6 +2,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDiagramStore } from '@/store/useDiagramStore';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useFilesStore } from '@/store/useFilesStore';
+import { useHistoryStore } from '@/store/useHistoryStore';
+import { performRedo, performUndo } from '@/utils/history';
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    target.isContentEditable
+  );
+}
 
 export function Toolbar() {
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -11,11 +24,36 @@ export function Toolbar() {
 
   const createFile = useFilesStore((s) => s.createFile);
 
+  // Re-render on history stack changes so buttons reflect canUndo/canRedo.
+  // Note: a pending (debounced) push is not reflected here; the keyboard
+  // shortcut still works because performUndo flushes pending first.
+  const canUndo = useHistoryStore((s) => s.past.length > 0);
+  const canRedo = useHistoryStore((s) => s.future.length > 0);
+
   const handleDelete = () => {
     if (selectedIds.length === 0) return;
     deleteElements(selectedIds);
     deselectAll();
   };
+
+  // Cmd/Ctrl+Z → undo ; Cmd/Ctrl+Shift+Z or Cmd/Ctrl+Y → redo.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        performUndo();
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        performRedo();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   return (
     <header
@@ -28,9 +66,18 @@ export function Toolbar() {
 
       <Divider />
 
-      {/* History — reserved (ME-024 / ME-025) */}
-      <ToolbarButton label="Undo" disabled />
-      <ToolbarButton label="Redo" disabled />
+      <ToolbarButton
+        label="Undo"
+        onClick={() => performUndo()}
+        disabled={!canUndo}
+        title="Undo (⌘Z)"
+      />
+      <ToolbarButton
+        label="Redo"
+        onClick={() => performRedo()}
+        disabled={!canRedo}
+        title="Redo (⇧⌘Z)"
+      />
 
       <Divider />
 
@@ -249,16 +296,19 @@ function ToolbarButton({
   label,
   disabled,
   onClick,
+  title,
 }: {
   label: string;
   disabled?: boolean;
   onClick?: () => void;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
+      title={title}
       className="rounded-[10px] px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
       style={{ color: 'var(--color-text-primary)' }}
     >

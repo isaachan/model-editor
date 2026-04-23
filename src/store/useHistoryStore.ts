@@ -12,6 +12,7 @@ export interface DiagramSnapshot {
 }
 
 const MAX_HISTORY = 100;
+const PUSH_DEBOUNCE_MS = 400;
 
 interface HistoryState {
   /** Previous snapshots; most recent is at the end. */
@@ -21,12 +22,17 @@ interface HistoryState {
   maxSize: number;
   /**
    * Set to true while undo/redo/file-load is programmatically mutating
-   * the diagram store. Subscribers should skip pushing during this window.
+   * the diagram store. Subscribers should skip scheduling during this window.
    */
   isApplyingHistory: boolean;
 
-  /** Record a snapshot of the *previous* state and clear the redo stack. */
-  push: (prev: DiagramSnapshot) => void;
+  /**
+   * Schedule `prev` as the next history entry, coalescing with any existing
+   * pending snapshot so rapid edits (e.g. continuous drag) collapse to one.
+   */
+  schedulePush: (prev: DiagramSnapshot) => void;
+  /** Flush any pending scheduled push immediately (used before undo). */
+  flushPending: () => void;
   /** Pop from past → return snapshot to apply; push `current` to future. */
   undo: (current: DiagramSnapshot) => DiagramSnapshot | null;
   /** Pop from future → return snapshot to apply; push `current` to past. */
@@ -35,8 +41,27 @@ interface HistoryState {
   canRedo: () => boolean;
   /** Clear both stacks; use when switching files or loading a fresh diagram. */
   reset: () => void;
-  /** Guard setter for subscribers to suppress pushes during programmatic updates. */
+  /** Guard setter for subscribers to suppress schedules during programmatic updates. */
   setApplyingHistory: (v: boolean) => void;
+}
+
+// Pending push state lives outside the store so timer handles don't leak
+// into the serialized state object.
+let pendingPrev: DiagramSnapshot | null = null;
+let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
+function commitPending(set: (patch: Partial<HistoryState>) => void, get: () => HistoryState) {
+  if (!pendingPrev) return;
+  const prev = pendingPrev;
+  pendingPrev = null;
+  if (pendingTimer) {
+    clearTimeout(pendingTimer);
+    pendingTimer = null;
+  }
+  const s = get();
+  const nextPast = [...s.past, prev];
+  while (nextPast.length > s.maxSize) nextPast.shift();
+  set({ past: nextPast, future: [] });
 }
 
 export const useHistoryStore = create<HistoryState>((set, get) => ({
@@ -45,22 +70,25 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   maxSize: MAX_HISTORY,
   isApplyingHistory: false,
 
-  push: (prev) =>
-    set((s) => {
-      const nextPast = [...s.past, prev];
-      // FIFO: drop oldest when over capacity.
-      while (nextPast.length > s.maxSize) nextPast.shift();
-      return { past: nextPast, future: [] };
-    }),
+  schedulePush: (prev) => {
+    // Coalesce: first edit in a burst captures prev; later edits extend the timer.
+    if (pendingPrev == null) pendingPrev = prev;
+    if (pendingTimer) clearTimeout(pendingTimer);
+    pendingTimer = setTimeout(() => commitPending(set, get), PUSH_DEBOUNCE_MS);
+  },
+
+  flushPending: () => commitPending(set, get),
 
   undo: (current) => {
+    // Flush any in-flight push so the most recent edit is undoable.
+    commitPending(set, get);
     const { past } = get();
     if (past.length === 0) return null;
     const target = past[past.length - 1];
-    set((s) => ({
-      past: s.past.slice(0, -1),
-      future: [...s.future, current],
-    }));
+    set({
+      past: past.slice(0, -1),
+      future: [...get().future, current],
+    });
     return target;
   },
 
@@ -68,16 +96,34 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const { future } = get();
     if (future.length === 0) return null;
     const target = future[future.length - 1];
-    set((s) => ({
-      past: [...s.past, current],
-      future: s.future.slice(0, -1),
-    }));
+    set({
+      past: [...get().past, current],
+      future: future.slice(0, -1),
+    });
     return target;
   },
 
-  canUndo: () => get().past.length > 0,
+  canUndo: () => get().past.length > 0 || pendingPrev != null,
   canRedo: () => get().future.length > 0,
 
-  reset: () => set({ past: [], future: [] }),
-  setApplyingHistory: (v) => set({ isApplyingHistory: v }),
+  reset: () => {
+    pendingPrev = null;
+    if (pendingTimer) {
+      clearTimeout(pendingTimer);
+      pendingTimer = null;
+    }
+    set({ past: [], future: [] });
+  },
+  setApplyingHistory: (v) => {
+    if (v) {
+      // Drop any stale pending snapshot: the about-to-happen replaceContent
+      // is programmatic (undo/redo/file-load), not a user edit.
+      pendingPrev = null;
+      if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        pendingTimer = null;
+      }
+    }
+    set({ isApplyingHistory: v });
+  },
 }));
