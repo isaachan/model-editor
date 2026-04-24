@@ -827,15 +827,27 @@ export function Canvas() {
           {relationPreview && pendingRelationSource && (() => {
             const fromType = typesById.get(relationPreview.fromTypeId);
             if (!fromType) return null;
-            let from = {
-              x: fromType.layout.x + fromType.layout.width / 2,
-              y: fromType.layout.y + fromType.layout.height / 2,
-            };
-            let to = relationPreview.mouse || from;
+            // 源节点布局
+            const sourceLayout = fromType.layout;
+            // 目标布局：如果鼠标悬停在某个 Type 上，可以用其 layout，否则用鼠标点为中心的虚拟 box
+            let targetLayout;
+            if (relationPreview.mouse) {
+              // 以鼠标为中心，宽高为0，确保折线终点正好在鼠标点
+              targetLayout = {
+                x: relationPreview.mouse.x,
+                y: relationPreview.mouse.y,
+                width: 0,
+                height: 0,
+              };
+            } else {
+              targetLayout = sourceLayout;
+            }
+            // 生成折线路径
+            const previewRoute = routeOrthogonal(sourceLayout, targetLayout);
             return (
               <Layer>
                 <Line
-                  points={[from.x, from.y, to.x, to.y]}
+                  points={previewRoute.points}
                   stroke="#007aff"
                   strokeWidth={2}
                   dash={[8, 6]}
