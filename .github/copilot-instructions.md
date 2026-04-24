@@ -46,7 +46,14 @@ Checked for common AI assistant instruction/config files (CLAUDE.md, .cursorrule
 
 ---
 
-If useful, add a short section here later with common code search keywords (e.g., "useDiagramStore", "useEditorStore", "geometry.ts", "Konva Layer").
+
+## Common code search keywords
+- useDiagramStore, useEditorStore, useHistoryStore (Zustand stores in src/store/)
+- geometry.ts, cardinality.ts (geometry/math utils)
+- Konva Layer, Canvas, TypeNode, RelationLine, GeneralizationBox, StickyNote (canvas rendering components)
+- exportStage, exportSvg (export utilities)
+- stories.csv (user stories, story-driven development)
+- ARCH_DESIGN.md, prd.md, VISUAL_DESIGN.md (architecture, requirements, visual design)
 
 ---
 

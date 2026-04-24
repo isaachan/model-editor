@@ -1,2 +1,0 @@
-- 可以用键盘方向键微调元素位置
-- 左边栏的图表，换成‘docs/ux_prototype/short-semantic-preview.html’ 里的极简风格
