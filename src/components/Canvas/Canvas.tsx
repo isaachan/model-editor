@@ -8,11 +8,11 @@ import { CANVAS, GRID } from '@/constants/defaults';
 import { LONG_SEMANTIC } from '@/constants/longSemantic';
 import {
   isGeneralization,
-  isLongSemantic,
+  isNote,
   isRelation,
   isType,
   type GeneralizationElement,
-  type LongSemanticElement,
+  type NoteElement,
   type ShortSemantic,
   type TypeElement,
 } from '@/models/diagram';
@@ -200,7 +200,7 @@ export function Canvas() {
   const addTypeSemantic = useDiagramStore((s) => s.addTypeSemantic);
   const addRelationMappingSemantic = useDiagramStore((s) => s.addRelationMappingSemantic);
   const addRelationAssociationSemantic = useDiagramStore((s) => s.addRelationAssociationSemantic);
-  const addLongSemanticAt = useDiagramStore((s) => s.addLongSemanticAt);
+  const addNoteAt = useDiagramStore((s) => s.addNoteAt);
 
   const currentTool = useEditorStore((s) => s.currentTool);
   const selectedIds = useEditorStore((s) => s.selectedIds);
@@ -297,7 +297,7 @@ export function Canvas() {
     return { ...el, layout: { ...el.layout, x: override.x, y: override.y } };
   };
 
-  const applyDragNote = (el: LongSemanticElement): LongSemanticElement => {
+  const applyDragNoteElement = (el: NoteElement): NoteElement => {
     const override = dragPos[el.id];
     if (!override) return el;
     return { ...el, layout: { ...el.layout, x: override.x, y: override.y } };
@@ -307,7 +307,7 @@ export function Canvas() {
   const typesById = new Map(types.map((t) => [t.id, t]));
   const relations = elements.filter(isRelation);
   const generalizations = elements.filter(isGeneralization);
-  const longSemantics = elements.filter(isLongSemantic);
+  const notes = elements.filter(isNote);
   const generalizationsWithParent = generalizations
     .map((gen) => {
       const parent = typesById.get(gen.parentTypeId);
@@ -471,7 +471,7 @@ export function Canvas() {
     if (currentTool === 'longSemantic') {
       // Empty-canvas click creates an unattached sticky note centered at the
       // pointer. Switching back to select mirrors the Type-tool flow.
-      const created = addLongSemanticAt(
+      const created = addNoteAt(
         worldPointer.x - LONG_SEMANTIC.defaultWidth / 2,
         worldPointer.y - LONG_SEMANTIC.defaultHeight / 2,
       );
@@ -936,11 +936,11 @@ export function Canvas() {
             </Group>
           </Layer>
 
-          {/* Long-semantic layer: notes + dashed connectors to their hosts. */}
+          {/* Note layer: notes + dashed connectors to their hosts. */}
           <Layer>
             <Group x={viewport.x} y={viewport.y} scaleX={viewport.scale} scaleY={viewport.scale}>
-              {longSemantics.map((note) => {
-                const applied = applyDragNote(note);
+              {notes.map((note) => {
+                const applied = applyDragNoteElement(note);
                 const connector = computeNoteConnector(applied, elements);
                 return (
                   <Group key={note.id}>

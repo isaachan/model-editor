@@ -16,8 +16,7 @@ export interface TypeElement {
   id: ElementId;
   type: 'type';
   name: string;
-  /** Phase 1: not yet edited via UI but kept in shape for forward compatibility. */
-  semantics?: ShortSemantic[];
+  semantics: ShortSemantic[]; // required, default []
   layout: Layout;
 }
 
@@ -35,10 +34,8 @@ export type CardinalityKind =
 export interface RelationEnd {
   typeId: ElementId;
   cardinality: CardinalityKind;
-  /** Parameter tuple for cardinality kinds that need user input. */
-  cardinalityRange?: [number, number | null];
-  /** Short semantic markers scoped to this mapping (this end of the relation). */
-  semantics?: ShortSemantic[];
+  /** Only present when cardinality === 'range' */
+  cardinalityRange?: [number, number];
 }
 
 export interface RelationElement {
@@ -47,42 +44,44 @@ export interface RelationElement {
   source: RelationEnd;
   target: RelationEnd;
   isDerived?: boolean;
-  /**
-   * Short semantic markers scoped to the association itself (e.g. hierarchy,
-   * dag). Rendered at the line's midpoint. Distinct from RelationEnd.semantics,
-   * which is per-mapping and rendered near the matching cardinality marker.
-   */
-  associationSemantics?: ShortSemantic[];
+  semantics: ShortSemantic[]; // required, default []
+  layout?: RelationLayout;
+}
+
+export interface RelationLayout {
+  controlPoints?: Point[];
+  sourceLabelOffset?: Point;
+  export interface NoteElement {
+    id: ElementId;
+    type: 'note';
+    heading: LongSemanticHeading;
+    content: string;
+    attachedTo?: ElementId;
+    layout: Layout;
+  }
+  targetLabelOffset?: Point;
+  semanticLabelOffset?: Point;
+}
+
+export interface Point {
+    | NoteElement;
+  x: number;
+  y: number;
 }
 
 /** Discriminated union matching schema v1.1 shortSemantic. */
 export type ShortSemantic =
   | { kind: 'abstract' }
-  | { kind: 'immutable' }
-  | { kind: 'singleton' }
-  | { kind: 'list' }
   | { kind: 'class' }
   | { kind: 'hierarchy' }
   | { kind: 'dag' }
-  | { kind: 'multiple_hierarchies' }
-  | { kind: 'historic' }
-  | { kind: 'key'; keyType: string }
-  | { kind: 'range'; min: number; max: number | null };
-
-// Placeholders for later-story elements (generalization, note) go here.
-export type DiagramElement =
-  | TypeElement
-  | RelationElement
-  | GeneralizationElement
-  | LongSemanticElement;
-
-export type PartitionCompleteness = 'complete' | 'incomplete';
-
+export const isRelation = (e: DiagramElement): e is RelationElement => e.type === 'relation';
+export const isGeneralization = (e: DiagramElement): e is GeneralizationElement => e.type === 'generalization';
+export const isNote = (e: DiagramElement): e is NoteElement => e.type === 'note';
 /**
- * Generalization partition container (ME-028 ~ ME-031).
- * A rectangular box anchored to exactly one parent Type (the supertype).
- * Contains zero or more child Types (subtypes). The bottom line is either
- * single (complete) or double with an inner extra stroke (incomplete).
+// 兼容旧类型定义，彻底移除 LongSemanticElement 相关内容
+// export interface LongSemanticElement { ... }
+// export const isLongSemantic = ...
  * The connector line from parent to container is a rendering detail of
  * this element (NOT a separate `relation`).
  */
@@ -108,7 +107,7 @@ export interface GeneralizationElement {
  * positioned in absolute canvas coordinates and do NOT follow their host
  * when the host is moved — only the dashed connector is re-routed.
  */
-export type LongSemanticHeading = 'constraint' | 'derivation' | 'note';
+export type LongSemanticHeading = 'Constraint' | 'Derivation' | 'Note';
 
 export interface LongSemanticElement {
   id: ElementId;
@@ -123,14 +122,18 @@ export interface DiagramMetadata {
   title: string;
   createdAt: number;
   updatedAt: number;
+  author?: string;
 }
 
 /** Type guards */
 export const isType = (e: DiagramElement): e is TypeElement => e.type === 'type';
-export const isRelation = (e: DiagramElement): e is RelationElement =>
-  e.type === 'relation';
-export const isGeneralization = (e: DiagramElement): e is GeneralizationElement =>
-  e.type === 'generalization';
-export const isLongSemantic = (e: DiagramElement): e is LongSemanticElement =>
-  e.type === 'longSemantic';
+export const isRelation = (e: DiagramElement): e is RelationElement => e.type === 'relation';
+export const isGeneralization = (e: DiagramElement): e is GeneralizationElement => e.type === 'generalization';
+export const isNote = (e: DiagramElement): e is NoteElement => e.type === 'note';
+
+// PartitionCompleteness: 'complete' | 'incomplete' (schema enum)
+export type PartitionCompleteness = 'complete' | 'incomplete';
+
+// DiagramElement 联合类型
+export type DiagramElement = TypeElement | RelationElement | GeneralizationElement | NoteElement;
 

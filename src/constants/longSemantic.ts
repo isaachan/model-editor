@@ -1,7 +1,7 @@
 import type { LongSemanticHeading } from '@/models/diagram';
 
 /**
- * Sticky-note visual parameters for LongSemanticElement.
+ * Sticky-note visual parameters for NoteElement.
  * Folded corner is on the top-right; heading rendered italic bold in its
  * heading color; body rendered as plain dark text beneath.
  */

@@ -10,12 +10,12 @@
 
 import {
   isGeneralization,
-  isLongSemantic,
+  isNote,
   isRelation,
   isType,
   type DiagramElement,
   type GeneralizationElement,
-  type LongSemanticElement,
+  type NoteElement,
   type RelationElement,
   type TypeElement,
 } from '@/models/diagram';
@@ -74,7 +74,7 @@ export function exportSvg(elements: DiagramElement[], filename = 'diagram.svg') 
   const typesById = new Map(types.map((t) => [t.id, t]));
   const relations = elements.filter(isRelation);
   const gens = elements.filter(isGeneralization);
-  const notes = elements.filter(isLongSemantic);
+  const notes = elements.filter(isNote);
 
   const bounds: Bounds = {
     minX: Infinity,
@@ -287,7 +287,7 @@ function renderGeneralization(
   return out.join('\n');
 }
 
-function renderNote(n: LongSemanticElement): string {
+function renderNote(n: NoteElement): string {
   const { x, y, width, height } = n.layout;
   const fold = LONG_SEMANTIC.fold;
   // Folded-corner outline: six points, fold at top-right.

@@ -153,7 +153,7 @@ export function RelationLine({
 
       {/* Association-level semantic markers at线的中点. */}
       <AssociationSemanticLabel
-        markers={relation.associationSemantics}
+        markers={relation.semantics}
         points={linePoints}
       />
     </Group>
@@ -207,7 +207,7 @@ function AssociationSemanticLabel({
   markers,
   points,
 }: {
-  markers: RelationElement['associationSemantics'];
+  markers: RelationElement['semantics'];
   points: number[];
 }) {
   if (!markers || markers.length === 0) return null;

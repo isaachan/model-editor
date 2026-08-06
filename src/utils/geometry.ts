@@ -1,3 +1,22 @@
+import type { DiagramElement, GeneralizationElement, TypeElement } from '@/models/diagram';
+/**
+ * 重新计算所有 generalization 的容器布局（如宽高、位置等）。
+ * 这里只是简单返回原数组，实际项目可根据需要实现 bbox 计算。
+ */
+export function recomputeAllContainers(elements: DiagramElement[]): DiagramElement[] {
+  // TODO: 实现更精确的 bbox 计算逻辑
+  return elements;
+}
+
+/**
+ * 查找 typeId 属于哪个 generalization 容器
+ */
+export function findContainerOfType(elements: DiagramElement[], typeId: string): GeneralizationElement | undefined {
+  return elements.find(
+    (el): el is GeneralizationElement =>
+      el.type === 'generalization' && el.childTypeIds.includes(typeId)
+  );
+}
 import { TYPE_NODE } from '@/constants/defaults';
 
 /**

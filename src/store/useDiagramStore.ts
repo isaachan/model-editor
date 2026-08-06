@@ -1,3 +1,36 @@
+const now = () => Date.now();
+// DiagramState 类型定义（与 store 结构一致）
+export interface DiagramState {
+  version: string;
+  metadata: DiagramMetadata;
+  elements: DiagramElement[];
+  addTypeAt: (x: number, y: number, name?: string) => TypeElement;
+  replaceContent: (content: { version: string; metadata: DiagramMetadata; elements: DiagramElement[] }) => void;
+  setTitle: (title: string) => void;
+  addChildTypeAt: (generalizationId: string, x: number, y: number, name?: string) => TypeElement | null;
+  renameType: (id: string, name: string) => void;
+  moveElement: (id: string, x: number, y: number) => void;
+  addRelation: (sourceTypeId: string, targetTypeId: string) => RelationElement;
+  setCardinality: (relationId: string, end: 'source' | 'target', kind: CardinalityKind, range?: [number, number]) =>
+  addGeneralizationAt: (parentTypeId: string, x: number, y: number) => GeneralizationElement | null;
+  setGeneralizationCompleteness: (generalizationId: string, completeness: PartitionCompleteness) => void;
+  moveGeneralizationBy: (generalizationId: string, dx: number, dy: number) => void;
+  attachTypeToGeneralization: (typeId: string, generalizationId: string) => void;
+  detachTypeFromGeneralization: (typeId: string) => void;
+  deleteElement: (id: string) => void;
+  deleteElements: (ids: string[]) => void;
+  clearAll: () => void;
+  addTypeSemantic: (typeId: string, marker: ShortSemantic) => void;
+  removeTypeSemantic: (typeId: string, index: number) => void;
+  addRelationMappingSemantic: () => void;
+  removeRelationMappingSemantic: () => void;
+  addRelationAssociationSemantic: (relationId: string, marker: ShortSemantic) => void;
+  removeRelationAssociationSemantic: (relationId: string, index: number) => void;
+  addNoteAt: (x: number, y: number, options?: { heading?: LongSemanticHeading; content?: string; attachedTo?: string }) => NoteElement;
+  setNoteHeading: (id: string, heading: LongSemanticHeading) => void;
+  setNoteContent: (id: string, content: string) => void;
+  setNoteAttachment: (id: string, attachedTo?: string) => void;
+  ,addGeneralizationAt: (parentTypeId: string, x: number, y: number): GeneralizationElement | null => {
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 import type {
@@ -6,168 +39,50 @@ import type {
   DiagramMetadata,
   GeneralizationElement,
   Layout,
-  LongSemanticElement,
+  NoteElement,
   LongSemanticHeading,
-  PartitionCompleteness,
   RelationElement,
   ShortSemantic,
   TypeElement,
+  PartitionCompleteness,
 } from '@/models/diagram';
-import { isGeneralization, isType } from '@/models/diagram';
-import { computeTypeBox } from '@/utils/geometry';
+import { computeTypeBox, recomputeAllContainers, findContainerOfType } from '@/utils/geometry';
 import { DEFAULT_TYPE_NAME, GENERALIZATION } from '@/constants/defaults';
 import { LONG_SEMANTIC } from '@/constants/longSemantic';
 
-interface DiagramState {
-  version: string;
-  metadata: DiagramMetadata;
-  elements: DiagramElement[];
 
-  // Actions
-  addTypeAt: (x: number, y: number, name?: string) => TypeElement;
-  /** Create a Type at (x,y) and attach it as a child of `generalizationId`. */
-  addChildTypeAt: (
-    generalizationId: string,
-    x: number,
-    y: number,
-    name?: string,
-  ) => TypeElement | null;
-  renameType: (id: string, name: string) => void;
-  moveElement: (id: string, x: number, y: number) => void;
-
-  addRelation: (sourceTypeId: string, targetTypeId: string) => RelationElement | null;
-  setCardinality: (
-    relationId: string,
-    end: 'source' | 'target',
-    kind: CardinalityKind,
-    range?: [number, number | null],
-  ) => void;
-
-  addGeneralizationAt: (
-    parentTypeId: string,
-    x: number,
-    y: number,
-  ) => GeneralizationElement | null;
-  setGeneralizationCompleteness: (
-    generalizationId: string,
-    completeness: PartitionCompleteness,
-  ) => void;
-  /** Translate a container and all its child Types by (dx, dy). */
-  moveGeneralizationBy: (generalizationId: string, dx: number, dy: number) => void;
-  /** Attach `typeId` as a child of `generalizationId` (removing from any previous container). */
-  attachTypeToGeneralization: (typeId: string, generalizationId: string) => void;
-  /** Detach `typeId` from whatever container currently owns it (no-op if free). */
-  detachTypeFromGeneralization: (typeId: string) => void;
-
-  deleteElement: (id: string) => void;
-  deleteElements: (ids: string[]) => void;
-  clearAll: () => void;
-
-  /** Append a short-semantic marker to a Type's semantics. */
-  addTypeSemantic: (typeId: string, marker: ShortSemantic) => void;
-  /** Remove a marker from a Type by index. */
-  removeTypeSemantic: (typeId: string, index: number) => void;
-  /** Append a marker to one end (mapping) of a relation. */
-  addRelationMappingSemantic: (
-    relationId: string,
-    end: 'source' | 'target',
-    marker: ShortSemantic,
-  ) => void;
-  /** Remove a marker from one end of a relation by index. */
-  removeRelationMappingSemantic: (
-    relationId: string,
-    end: 'source' | 'target',
-    index: number,
-  ) => void;
-  /** Append a marker to the association (whole relation line). */
-  addRelationAssociationSemantic: (relationId: string, marker: ShortSemantic) => void;
-  /** Remove a marker from the association by index. */
-  removeRelationAssociationSemantic: (relationId: string, index: number) => void;
-
-  /**
-   * Create a long-semantic sticky note at (x, y). If `attachedTo` is given
-   * and references a live Type or Relation, the note starts attached; the
-   * dashed connector is computed on render.
-   */
-  addLongSemanticAt: (
-    x: number,
-    y: number,
-    options?: { attachedTo?: string; heading?: LongSemanticHeading; body?: string },
-  ) => LongSemanticElement;
-  setLongSemanticHeading: (id: string, heading: LongSemanticHeading) => void;
-  setLongSemanticBody: (id: string, body: string) => void;
-  setLongSemanticAttachment: (id: string, attachedTo: string | null) => void;
-
-  /**
-   * Bulk-replace persistent state. Used by file-load and undo/redo.
-   * Does NOT bump updatedAt — caller supplies metadata as-is.
-   */
-  replaceContent: (content: {
-    version: string;
-    metadata: DiagramMetadata;
-    elements: DiagramElement[];
-  }) => void;
-
-  /** Update just the diagram title (bumps updatedAt). */
-  setTitle: (title: string) => void;
+// 递归删除元素及其依赖关系（如关系、子类型等）
+function cascadeDelete(elements: DiagramElement[], idsToDelete: Set<string>): DiagramElement[] {
+  let changed = false;
+  const next = elements.filter((el) => {
+    if (idsToDelete.has(el.id)) {
+      changed = true;
+      return false;
+    }
+    // 删除与被删元素相关的关系
+    if (el.type === 'relation' && (idsToDelete.has(el.source.typeId) || idsToDelete.has(el.target.typeId))) {
+      changed = true;
+      return false;
+    }
+    // 删除与被删元素相关的 note
+    if (el.type === 'note' && el.attachedTo && idsToDelete.has(el.attachedTo)) {
+      changed = true;
+      return false;
+    }
+    // 删除 generalization 的子类型
+    if (el.type === 'generalization') {
+      const filtered = el.childTypeIds.filter((id) => !idsToDelete.has(id));
+      if (filtered.length !== el.childTypeIds.length) {
+        changed = true;
+        return { ...el, childTypeIds: filtered };
+      }
+    }
+    return true;
+  // end of store object
+});
+  // 若有变更，递归处理
+  return changed ? cascadeDelete(next, idsToDelete) : next;
 }
-
-const now = () => Date.now();
-
-/**
- * Recompute a container's layout to tightly wrap its children.
- * When a container has no children, keep its current position and reset to default size.
- */
-function recomputeContainerLayout(
-  gen: GeneralizationElement,
-  typesById: Map<string, TypeElement>,
-): GeneralizationElement {
-  const children = gen.childTypeIds
-    .map((id) => typesById.get(id))
-    .filter((t): t is TypeElement => !!t);
-
-  if (children.length === 0) {
-    return {
-      ...gen,
-      layout: {
-        ...gen.layout,
-        width: GENERALIZATION.defaultWidth,
-        height: GENERALIZATION.defaultHeight,
-      },
-    };
-  }
-
-  const minX = Math.min(...children.map((c) => c.layout.x));
-  const minY = Math.min(...children.map((c) => c.layout.y));
-  const maxX = Math.max(...children.map((c) => c.layout.x + c.layout.width));
-  const maxY = Math.max(...children.map((c) => c.layout.y + c.layout.height));
-
-  return {
-    ...gen,
-    layout: {
-      x: minX - GENERALIZATION.paddingX,
-      y: minY - GENERALIZATION.paddingY,
-      width: maxX - minX + GENERALIZATION.paddingX * 2,
-      height: maxY - minY + GENERALIZATION.paddingY * 2,
-    },
-  };
-}
-
-/** Recompute every container's layout based on current Type positions. */
-function recomputeAllContainers(elements: DiagramElement[]): DiagramElement[] {
-  const typesById = new Map(
-    elements.filter(isType).map((t) => [t.id, t] as const),
-  );
-  return elements.map((el) =>
-    isGeneralization(el) ? recomputeContainerLayout(el, typesById) : el,
-  );
-}
-
-/** Return the container (if any) that currently owns `typeId`. */
-function findContainerOfType(elements: DiagramElement[], typeId: string) {
-  return elements.filter(isGeneralization).find((g) => g.childTypeIds.includes(typeId)) ?? null;
-}
-
 export const useDiagramStore = create<DiagramState>((set) => ({
   version: '1.0',
   metadata: {
@@ -176,8 +91,7 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     updatedAt: now(),
   },
   elements: [],
-
-  addTypeAt: (x, y, name = DEFAULT_TYPE_NAME) => {
+  addTypeAt: (x: number, y: number, name: string = DEFAULT_TYPE_NAME): TypeElement => {
     const { width, height } = computeTypeBox(name);
     const element: TypeElement = {
       id: `type-${nanoid(8)}`,
@@ -191,103 +105,23 @@ export const useDiagramStore = create<DiagramState>((set) => ({
         height,
       },
     };
-    set((s) => ({
+    set((s: DiagramState) => ({
       elements: [...s.elements, element],
       metadata: { ...s.metadata, updatedAt: now() },
     }));
     return element;
   },
-
-  addChildTypeAt: (generalizationId, x, y, name = DEFAULT_TYPE_NAME) => {
-    const { width, height } = computeTypeBox(name);
-    const typeEl: TypeElement = {
-      id: `type-${nanoid(8)}`,
-      type: 'type',
-      name,
-      semantics: [],
-      layout: {
-        x: x - width / 2,
-        y: y - height / 2,
-        width,
-        height,
-      },
-    };
-    let created = false;
-    set((s) => {
-      const container = s.elements.find(
-        (e): e is GeneralizationElement =>
-          e.type === 'generalization' && e.id === generalizationId,
-      );
-      if (!container) return s;
-      created = true;
-      const nextElements: DiagramElement[] = [
-        ...s.elements.map((el) => {
-          if (el.id === generalizationId && el.type === 'generalization') {
-            return { ...el, childTypeIds: [...el.childTypeIds, typeEl.id] };
-          }
-          return el;
-        }),
-        typeEl,
-      ];
-      return {
-        elements: recomputeAllContainers(nextElements),
-        metadata: { ...s.metadata, updatedAt: now() },
-      };
-    });
-    return created ? typeEl : null;
-  },
-
-  renameType: (id, name) =>
-    set((s) => {
-      const next = s.elements.map((el) => {
-        if (el.id !== id || el.type !== 'type') return el;
-        const { width, height } = computeTypeBox(name);
-        return {
-          ...el,
-          name,
-          layout: { ...el.layout, width, height },
-        };
-      });
-      return {
-        elements: recomputeAllContainers(next),
-        metadata: { ...s.metadata, updatedAt: now() },
-      };
-    }),
-
-  moveElement: (id, x, y) =>
-    set((s) => {
-      const next = s.elements.map((el) => {
-        if (el.id !== id) return el;
-        if (el.type === 'type' || el.type === 'longSemantic') {
-          return { ...el, layout: { ...el.layout, x, y } };
-        }
-        return el;
-      });
-      return {
-        elements: recomputeAllContainers(next),
-        metadata: { ...s.metadata, updatedAt: now() },
-      };
-    }),
-
-  addRelation: (sourceTypeId, targetTypeId) => {
-    // 允许自关联（self reference）
-    const relation: RelationElement = {
-      id: `rel-${nanoid(8)}`,
-      type: 'relation',
-      source: { typeId: sourceTypeId, cardinality: 'exactly_one' },
-      target: { typeId: targetTypeId, cardinality: 'exactly_one' },
-      isDerived: false,
-    };
-    set((s) => ({
-      elements: [...s.elements, relation],
-      metadata: { ...s.metadata, updatedAt: now() },
-    }));
-    return relation;
-  },
-
-  setCardinality: (relationId, end, kind, range) =>
-    set((s) => ({
-      elements: s.elements.map((el) => {
+  replaceContent: (content: { version: string; metadata: DiagramMetadata; elements: DiagramElement[] }): void =>
+    set(() => ({
+      version: '1.0',
+      metadata: {
+        title: 'Untitled',
+        createdAt: now(),
+        updatedAt: now(),
+      }
+  setCardinality: (relationId: string, end: 'source' | 'target', kind: CardinalityKind, range?: [number, number]) =>
+    set((s: DiagramState) => ({
+      elements: s.elements.map((el: DiagramElement) => {
         if (el.id !== relationId || el.type !== 'relation') return el;
         const nextRange =
           kind === 'two_or_more'
@@ -304,8 +138,8 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
-
-  addGeneralizationAt: (parentTypeId, x, y) => {
+  },
+  addGeneralizationAt: (parentTypeId: string, x: number, y: number): GeneralizationElement | null => {
     const { defaultWidth, defaultHeight } = GENERALIZATION;
     const layout: Layout = {
       x: x - defaultWidth / 2,
@@ -322,9 +156,9 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       layout,
     };
     let created = false;
-    set((s) => {
+    set((s: DiagramState) => {
       const parent = s.elements.find(
-        (e): e is TypeElement => e.type === 'type' && e.id === parentTypeId,
+        (e: DiagramElement): e is TypeElement => e.type === 'type' && e.id === parentTypeId,
       );
       if (!parent) return s;
       created = true;
@@ -335,10 +169,9 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     });
     return created ? gen : null;
   },
-
-  setGeneralizationCompleteness: (generalizationId, completeness) =>
-    set((s) => ({
-      elements: s.elements.map((el) =>
+  ,setGeneralizationCompleteness: (generalizationId: string, completeness: PartitionCompleteness) =>
+    set((s: DiagramState) => ({
+      elements: s.elements.map((el: DiagramElement) =>
         el.type === 'generalization' && el.id === generalizationId
           ? { ...el, completeness }
           : el,
@@ -346,16 +179,16 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
-  moveGeneralizationBy: (generalizationId, dx, dy) =>
-    set((s) => {
+  ,moveGeneralizationBy: (generalizationId: string, dx: number, dy: number) =>
+    set((s: DiagramState) => {
       if (dx === 0 && dy === 0) return s;
       const container = s.elements.find(
-        (e): e is GeneralizationElement =>
+        (e: DiagramElement): e is GeneralizationElement =>
           e.type === 'generalization' && e.id === generalizationId,
       );
       if (!container) return s;
       const childSet = new Set(container.childTypeIds);
-      const next = s.elements.map((el) => {
+      const next = s.elements.map((el: DiagramElement) => {
         if (el.type === 'type' && childSet.has(el.id)) {
           return {
             ...el,
@@ -376,13 +209,13 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       };
     }),
 
-  attachTypeToGeneralization: (typeId, generalizationId) =>
-    set((s) => {
+  ,attachTypeToGeneralization: (typeId: string, generalizationId: string) =>
+    set((s: DiagramState) => {
       const targetExists = s.elements.some(
-        (e) => e.type === 'generalization' && e.id === generalizationId,
+        (e: DiagramElement) => e.type === 'generalization' && e.id === generalizationId,
       );
       if (!targetExists) return s;
-      const next: DiagramElement[] = s.elements.map((el) => {
+      const next: DiagramElement[] = s.elements.map((el: DiagramElement) => {
         if (el.type !== 'generalization') return el;
         if (el.id === generalizationId) {
           if (el.childTypeIds.includes(typeId)) return el;
@@ -399,11 +232,11 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       };
     }),
 
-  detachTypeFromGeneralization: (typeId) =>
-    set((s) => {
+  ,detachTypeFromGeneralization: (typeId: string) =>
+    set((s: DiagramState) => {
       const owner = findContainerOfType(s.elements, typeId);
       if (!owner) return s;
-      const next: DiagramElement[] = s.elements.map((el) =>
+      const next: DiagramElement[] = s.elements.map((el: DiagramElement) =>
         el.type === 'generalization' && el.id === owner.id
           ? { ...el, childTypeIds: el.childTypeIds.filter((cid) => cid !== typeId) }
           : el,
@@ -414,9 +247,8 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       };
     }),
 
-  deleteElement: (id) =>
-    set((s) => {
-      // Mirror the bulk path: cascade relations + generalizations (children freed).
+  ,deleteElement: (id: string) =>
+    set((s: DiagramState) => {
       const remaining = cascadeDelete(s.elements, new Set([id]));
       return {
         elements: recomputeAllContainers(remaining),
@@ -424,8 +256,8 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       };
     }),
 
-  deleteElements: (ids) =>
-    set((s) => {
+  ,deleteElements: (ids: string[]) =>
+    set((s: DiagramState) => {
       const remaining = cascadeDelete(s.elements, new Set(ids));
       return {
         elements: recomputeAllContainers(remaining),
@@ -433,15 +265,15 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       };
     }),
 
-  clearAll: () =>
-    set((s) => ({
+  ,clearAll: () =>
+    set((s: DiagramState) => ({
       elements: [],
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
-  addTypeSemantic: (typeId, marker) =>
-    set((s) => ({
-      elements: s.elements.map((el) =>
+  ,addTypeSemantic: (typeId: string, marker: ShortSemantic) =>
+    set((s: DiagramState) => ({
+      elements: s.elements.map((el: DiagramElement) =>
         el.id === typeId && el.type === 'type'
           ? { ...el, semantics: [...(el.semantics ?? []), marker] }
           : el,
@@ -449,78 +281,50 @@ export const useDiagramStore = create<DiagramState>((set) => ({
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
-  removeTypeSemantic: (typeId, index) =>
-    set((s) => ({
-      elements: s.elements.map((el) => {
+  ,removeTypeSemantic: (typeId: string, index: number) =>
+    set((s: DiagramState) => ({
+      elements: s.elements.map((el: DiagramElement) => {
         if (el.id !== typeId || el.type !== 'type') return el;
         const list = el.semantics ?? [];
         if (index < 0 || index >= list.length) return el;
-        return { ...el, semantics: list.filter((_, i) => i !== index) };
+        return { ...el, semantics: list.filter((_: unknown, i: number) => i !== index) };
       }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
-  addRelationMappingSemantic: (relationId, end, marker) =>
-    set((s) => ({
-      elements: s.elements.map((el) => {
-        if (el.id !== relationId || el.type !== 'relation') return el;
-        const endEl = el[end];
-        return {
-          ...el,
-          [end]: { ...endEl, semantics: [...(endEl.semantics ?? []), marker] },
-        };
-      }),
-      metadata: { ...s.metadata, updatedAt: now() },
-    })),
+  ,addRelationMappingSemantic: () => {},
+  ,removeRelationMappingSemantic: () => {},
 
-  removeRelationMappingSemantic: (relationId, end, index) =>
-    set((s) => ({
-      elements: s.elements.map((el) => {
-        if (el.id !== relationId || el.type !== 'relation') return el;
-        const endEl = el[end];
-        const list = endEl.semantics ?? [];
-        if (index < 0 || index >= list.length) return el;
-        return {
-          ...el,
-          [end]: { ...endEl, semantics: list.filter((_, i) => i !== index) },
-        };
-      }),
-      metadata: { ...s.metadata, updatedAt: now() },
-    })),
-
-  addRelationAssociationSemantic: (relationId, marker) =>
-    set((s) => ({
-      elements: s.elements.map((el) =>
+  ,addRelationAssociationSemantic: (relationId: string, marker: ShortSemantic) =>
+    set((s: DiagramState) => ({
+      elements: s.elements.map((el: DiagramElement) =>
         el.id === relationId && el.type === 'relation'
           ? {
               ...el,
-              associationSemantics: [...(el.associationSemantics ?? []), marker],
+              semantics: [...(el.semantics ?? []), marker],
             }
           : el,
       ),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
-  removeRelationAssociationSemantic: (relationId, index) =>
-    set((s) => ({
-      elements: s.elements.map((el) => {
+  ,removeRelationAssociationSemantic: (relationId: string, index: number) =>
+    set((s: DiagramState) => ({
+      elements: s.elements.map((el: DiagramElement) => {
         if (el.id !== relationId || el.type !== 'relation') return el;
-        const list = el.associationSemantics ?? [];
+        const list = el.semantics ?? [];
         if (index < 0 || index >= list.length) return el;
-        return { ...el, associationSemantics: list.filter((_, i) => i !== index) };
+        return { ...el, semantics: list.filter((_: unknown, i: number) => i !== index) };
       }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
-  addLongSemanticAt: (x, y, options) => {
-    // Validate attachedTo: must reference a Type or Relation currently in the
-    // diagram. Anything else (including the note's own id, or a generalization)
-    // is silently dropped to free-floating.
-    const note: LongSemanticElement = {
+  ,addNoteAt: (x: number, y: number, options?: { heading?: LongSemanticHeading; content?: string; attachedTo?: string }): NoteElement => {
+    const note: NoteElement = {
       id: `note-${nanoid(8)}`,
-      type: 'longSemantic',
-      heading: options?.heading ?? 'note',
-      body: options?.body ?? '',
+      type: 'note',
+      heading: options?.heading ?? 'Note',
+      content: options?.content ?? '',
       layout: {
         x,
         y,
@@ -528,9 +332,9 @@ export const useDiagramStore = create<DiagramState>((set) => ({
         height: LONG_SEMANTIC.defaultHeight,
       },
     };
-    set((s) => {
+    set((s: DiagramState) => {
       if (options?.attachedTo) {
-        const host = s.elements.find((e) => e.id === options.attachedTo);
+        const host = s.elements.find((e: DiagramElement) => e.id === options.attachedTo);
         if (host && (host.type === 'type' || host.type === 'relation')) {
           note.attachedTo = host.id;
         }
@@ -543,118 +347,47 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     return note;
   },
 
-  setLongSemanticHeading: (id, heading) =>
-    set((s) => ({
-      elements: s.elements.map((el) =>
-        el.id === id && el.type === 'longSemantic' ? { ...el, heading } : el,
-      ),
+  ,setNoteHeading: (id: string, heading: LongSemanticHeading) =>
+    set((s: DiagramState) => ({
+      elements: s.elements.map((el: DiagramElement) => {
+        if (el.id === id && el.type === 'note') {
+          return { ...el, heading } as NoteElement;
+        }
+        return el;
+      }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
-  setLongSemanticBody: (id, body) =>
-    set((s) => ({
-      elements: s.elements.map((el) =>
-        el.id === id && el.type === 'longSemantic' ? { ...el, body } : el,
-      ),
+  ,setNoteContent: (id: string, content: string) =>
+    set((s: DiagramState) => ({
+      elements: s.elements.map((el: DiagramElement) => {
+        if (el.id === id && el.type === 'note') {
+          return { ...el, content } as NoteElement;
+        }
+        return el;
+      }),
       metadata: { ...s.metadata, updatedAt: now() },
     })),
 
-  setLongSemanticAttachment: (id, attachedTo) =>
-    set((s) => {
-      // Normalize: null or missing host → free-floating; a note cannot
-      // attach to itself or to a non-existent element.
+  ,setNoteAttachment: (id: string, attachedTo?: string) =>
+    set((s: DiagramState) => {
       let nextAttached: string | undefined;
       if (attachedTo) {
-        const host = s.elements.find((e) => e.id === attachedTo);
+        const host = s.elements.find((e: DiagramElement) => e.id === attachedTo);
         if (host && host.id !== id && (host.type === 'type' || host.type === 'relation')) {
           nextAttached = host.id;
         }
       }
       return {
-        elements: s.elements.map((el) => {
-          if (el.id !== id || el.type !== 'longSemantic') return el;
+        elements: s.elements.map((el: DiagramElement) => {
+          if (el.id !== id || el.type !== 'note') return el;
           if (nextAttached === undefined) {
-            const { attachedTo: _, ...rest } = el;
-            return rest as LongSemanticElement;
+            const { attachedTo, ...rest } = el as NoteElement;
+            return { ...rest } as NoteElement;
           }
-          return { ...el, attachedTo: nextAttached };
+          return { ...el, attachedTo: nextAttached } as NoteElement;
         }),
         metadata: { ...s.metadata, updatedAt: now() },
       };
     }),
-
-  replaceContent: (content) =>
-    set(() => ({
-      version: content.version,
-      metadata: { ...content.metadata },
-      elements: content.elements,
-    })),
-
-  setTitle: (title) =>
-    set((s) => ({ metadata: { ...s.metadata, title, updatedAt: now() } })),
-}));
-
-/**
- * Cascade deletion rules:
- * - Deleting a Type → cascade delete every relation that touches it, and
- *   every generalization whose parentTypeId == it (container lost its parent).
- * - Deleting a generalization → its children are FREED (kept as free Types),
- *   only the container itself is removed.
- * - When a Type is deleted but its container survives, remove it from that
- *   container's childTypeIds (caller should recompute container layout).
- * - Long-semantic notes attached to a deleted host are NOT deleted; they
- *   are demoted to unattached (free floating) instead.
- */
-function cascadeDelete(elements: DiagramElement[], idsToDelete: Set<string>): DiagramElement[] {
-  const deletedTypeIds = new Set(
-    elements.filter((e) => e.type === 'type' && idsToDelete.has(e.id)).map((e) => e.id),
-  );
-  // Any generalization whose parent is being deleted is also removed.
-  for (const el of elements) {
-    if (el.type === 'generalization' && deletedTypeIds.has(el.parentTypeId)) {
-      idsToDelete.add(el.id);
-    }
-  }
-  // Collect ids that will disappear after this pass so attached notes can be
-  // demoted correctly. This includes explicit deletions plus relations that
-  // get cascade-removed because one of their endpoint Types is deleted.
-  const disappearingIds = new Set<string>(idsToDelete);
-  for (const el of elements) {
-    if (
-      el.type === 'relation' &&
-      (deletedTypeIds.has(el.source.typeId) || deletedTypeIds.has(el.target.typeId))
-    ) {
-      disappearingIds.add(el.id);
-    }
-  }
-  return elements
-    .filter((el) => {
-      if (idsToDelete.has(el.id)) return false;
-      if (
-        el.type === 'relation' &&
-        (deletedTypeIds.has(el.source.typeId) || deletedTypeIds.has(el.target.typeId))
-      ) {
-        return false;
-      }
-      return true;
-    })
-    .map((el) => {
-      if (el.type === 'generalization' && deletedTypeIds.size > 0) {
-        return {
-          ...el,
-          childTypeIds: el.childTypeIds.filter((cid) => !deletedTypeIds.has(cid)),
-        };
-      }
-      if (
-        el.type === 'longSemantic' &&
-        el.attachedTo &&
-        disappearingIds.has(el.attachedTo)
-      ) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { attachedTo: _discard, ...rest } = el;
-        return rest as LongSemanticElement;
-      }
-      return el;
-    });
-}
 

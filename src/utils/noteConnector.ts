@@ -1,6 +1,6 @@
 import type {
   DiagramElement,
-  LongSemanticElement,
+  NoteElement,
   RelationElement,
   TypeElement,
 } from '@/models/diagram';
@@ -24,7 +24,7 @@ export interface NoteConnector {
 }
 
 export function computeNoteConnector(
-  note: LongSemanticElement,
+  note: NoteElement,
   elements: DiagramElement[],
 ): NoteConnector | null {
   if (!note.attachedTo) return null;

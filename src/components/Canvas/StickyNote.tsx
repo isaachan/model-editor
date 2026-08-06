@@ -1,10 +1,10 @@
 import { Group, Line, Path, Rect, Text } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
-import type { LongSemanticElement } from '@/models/diagram';
+import type { NoteElement } from '@/models/diagram';
 import { LONG_SEMANTIC, headingColor, headingLabel } from '@/constants/longSemantic';
 
 interface StickyNoteProps {
-  element: LongSemanticElement;
+  element: NoteElement;
   selected: boolean;
   hovered: boolean;
   panModeActive?: boolean;
@@ -16,7 +16,7 @@ interface StickyNoteProps {
 }
 
 /**
- * Renders the folded-corner sticky note for a LongSemanticElement.
+ * Renders the folded-corner sticky note for a NoteElement.
  * Body text is naively wrapped per-line by Konva's `text` wrapping since we
  * fix width. Folded corner is baked into the outline path; the triangular
  * fold patch sits on top.

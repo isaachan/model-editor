@@ -13,7 +13,7 @@ import { LONG_SEMANTIC_HEADINGS } from '@/constants/longSemantic';
 import type {
   CardinalityKind,
   GeneralizationElement,
-  LongSemanticElement,
+  NoteElement,
   LongSemanticHeading,
   PartitionCompleteness,
   RelationElement,
@@ -629,14 +629,12 @@ function LongSemanticInspector({
   note,
   elements,
 }: {
-  note: LongSemanticElement;
+  note: NoteElement;
   elements: ReturnType<typeof useDiagramStore.getState>['elements'];
 }) {
-  const setLongSemanticHeading = useDiagramStore((s) => s.setLongSemanticHeading);
-  const setLongSemanticBody = useDiagramStore((s) => s.setLongSemanticBody);
-  const setLongSemanticAttachment = useDiagramStore(
-    (s) => s.setLongSemanticAttachment,
-  );
+  const setNoteHeading = useDiagramStore((s) => s.setNoteHeading);
+  const setNoteContent = useDiagramStore((s) => s.setNoteContent);
+  const setNoteAttachment = useDiagramStore((s) => s.setNoteAttachment);
 
   const typesById = new Map(
     elements.filter((e): e is TypeElement => e.type === 'type').map((t) => [t.id, t]),
@@ -679,7 +677,7 @@ function LongSemanticInspector({
         <select
           value={note.heading}
           onChange={(e) =>
-            setLongSemanticHeading(note.id, e.target.value as LongSemanticHeading)
+            setNoteHeading(note.id, e.target.value as LongSemanticHeading)
           }
           className="w-full rounded border px-2 py-1.5 text-sm"
           style={{
@@ -704,8 +702,8 @@ function LongSemanticInspector({
           正文
         </label>
         <textarea
-          value={note.body}
-          onChange={(e) => setLongSemanticBody(note.id, e.target.value)}
+          value={note.content}
+          onChange={(e) => setNoteContent(note.id, e.target.value)}
           rows={6}
           className="w-full resize-y rounded border px-2 py-1.5 text-sm"
           style={{
@@ -735,7 +733,7 @@ function LongSemanticInspector({
             <span style={{ color: 'var(--color-text-primary)' }}>{attachedLabel}</span>
             <button
               type="button"
-              onClick={() => setLongSemanticAttachment(note.id, null)}
+              onClick={() => setNoteAttachment(note.id, null)}
               className="ml-2 rounded px-2 py-0.5 text-[11px]"
               style={{
                 color: 'var(--color-text-secondary)',
@@ -749,7 +747,7 @@ function LongSemanticInspector({
           <select
             value=""
             onChange={(e) => {
-              if (e.target.value) setLongSemanticAttachment(note.id, e.target.value);
+              if (e.target.value) setNoteAttachment(note.id, e.target.value);
             }}
             className="w-full rounded border px-2 py-1.5 text-sm"
             style={{
